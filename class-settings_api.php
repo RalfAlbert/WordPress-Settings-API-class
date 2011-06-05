@@ -1,4 +1,20 @@
 <?php
+/**
+ * @package WordPress
+ * @subpackage Settings-API class
+ * @author Ralf Albert
+ * @version 0.2
+ * @license GPL
+ */
+
+/*
+ * Credits go to:
+ * - Alison Barret[1]
+ * 	 His tutorial[2] has inspired me and helped me to write this class
+ * 
+ * [1] http://alisothegeek.com/author/abarrett/
+ * [2] http://alisothegeek.com/2011/01/wordpress-settings-api-tutorial-1/
+ */
 
 class Settings_API_Class
 {
@@ -50,7 +66,7 @@ class Settings_API_Class
 	 * @access public
 	 */
 	public function __construct( array $settings = NULL )
-	{
+	{		
 		if( !empty( $settings ) )
 		{
 			$this->set_settings( $settings );
@@ -105,6 +121,11 @@ class Settings_API_Class
 
 		$this->_settings = wp_parse_args( $settings, $defaults );
 		
+		// Sanitize the users data!
+		// There is only one thing that makes you sleep well:
+		// Better than security is more security
+		array_walk_recursive( $this->_settings, array( &$this, 'sanitize_settings' ) );
+				
 		extract( $this->_settings );
 		
 		$this->options_group	 = $options_group;
@@ -184,7 +205,7 @@ class Settings_API_Class
 	public function add_page()
 	{	
 		$where = 'add_' . $this->menu_position . '_page';
-		$this->_settings['admin_page'] = $where( $this->page_title, $this->menu_title, $this->capability, $this->page_slug, array( &$this, 'display_page' ) );
+		$this->_settings['admin_page'] = $where( $this->page_title, $this->menu_title, $this->capability, $this->page_slug, array( &$this, 'display_page' ) );		
 	}
 
 	/**
@@ -198,7 +219,7 @@ class Settings_API_Class
 	 * @access public
 	 */
 	public function display_page()
-	{		
+	{	
 		echo '<div class="wrap">
 		<div class="icon32" id="' . $this->icon . '"></div>
 		<h2>' . $this->page_title . '</h2>';
@@ -279,10 +300,10 @@ class Settings_API_Class
 			'desc'       => $desc,
 			'text_after' => $text_after,
 			'std'        => $std,
-			'size'		 => $size,
-			'rows'		 => $rows,
-			'cols'		 => $cols,
-			'choices'    => $choices,
+			'size'		 => (int) $size,
+			'rows'		 => (int) $rows,
+			'cols'		 => (int) $cols,
+			'choices'    => (array) $choices,
 			'label_for'  => $id,
 			'class'      => $class
 		);
@@ -310,21 +331,18 @@ class Settings_API_Class
 	 * Outputs the HTML for every setting field
 	 * @param array $args
 	 * @return none
+	 * @uses esc_textarea (since WP 3.1)
+	 * @uses esc_html
 	 * @since 0.1
 	 * @access public
 	 */
 	public function display_settings_field( $args = array() )
 	{
-
 		extract( $args );
-// TODO: error handling	
-		if( !isset( $id ) )
-		{
-			wp_die( 'No ID in settings field' );
-		}
 		
 		$options = get_option( $this->options_name );
 				
+		// set standard for multi checkbox
 		if( is_array( $std ) && $type == 'mcheckbox' && !isset( $options[$id] ) )
 		{
 			foreach( $std as $key )
@@ -334,13 +352,16 @@ class Settings_API_Class
 			}
 		}
 				
+		// set standard for all other
 		if( !isset( $options[$id] ) && isset( $std ) )
 			$options[$id] = $std;
 
+		// set css class
 		$field_class = '';
-		if('' !=  $class )
+		if( !empty( $class ) )
 			$field_class = ' class="' . $class . '"';
 			
+		// display setting field
 		switch( $type )
 		{
 		
@@ -418,7 +439,7 @@ class Settings_API_Class
 			break;
 			
 			case 'textarea':
-				echo '<textarea' . $field_class . ' id="' . $id . '" name="'.$this->options_name.'[' . $id . ']" rows="'.$rows.'" cols="'.$cols.'" placeholder="' . $std . '">' . $options[$id] . '</textarea>';
+				echo '<textarea' . $field_class . ' id="' . $id . '" name="'.$this->options_name.'[' . $id . ']" rows="'.$rows.'" cols="'.$cols.'" placeholder="' . $std . '">' . esc_textarea( $options[$id] ) . '</textarea>';
 			
 				$this->show_field_description( $desc );
 							
@@ -433,7 +454,7 @@ class Settings_API_Class
 		
 			case 'text':
 				echo '<input' . $field_class . ' type="text" size="'. $size . ' id="' . $id . '" name="'.$this->options_name.'[' . $id . ']"
-					placeholder="' . $std . '" value="' . $options[$id] . '" />' . $text_after;
+					placeholder="' . $std . '" value="' . esc_html( $options[$id] ) . '" />' . $text_after;
 				
 				$this->show_field_description( $desc );
 			
@@ -445,7 +466,6 @@ class Settings_API_Class
 			
 			break;
 		}
-	
 	}
 	
 	/**
@@ -460,5 +480,22 @@ class Settings_API_Class
 	{
 		if( ! empty( $desc ) )
 			echo '<br /><small>' . $desc . '</small>';
+	}
+
+	/**
+	 * 
+	 * Sanitizing the users data
+	 * Strings will be sanitize with esc_attr, all other values will be cast to integer (we only need strings and integer)
+	 * @param mixed $data
+	 * @return none $data will be modified by reference
+	 * @since 0.2.1
+	 * @access private
+	 */
+	private function sanitize_settings( &$data )
+	{
+		if( is_string( $data ) )
+			esc_attr( $data );
+		else
+			$data = intval( $data );
 	}
 }
