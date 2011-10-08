@@ -1,3 +1,6 @@
 .project
 .buildpath
 .settings/**/*
+
+/.settings
+/.gitignore

@@ -63,7 +63,7 @@ if( !class_exists( 'Settings_API_Class_Demo' ) && function_exists( 'add_action' 
 					'multi'		 => __('More than one choice are available.'),
 				),
 
-				'fields'			 => array(
+				'settings_fields'			 => array(
 					array(
 						'id'		 => 'demo_heading',
 						'title'		 => 'Heading',
@@ -158,6 +158,23 @@ if( !class_exists( 'Settings_API_Class_Demo' ) && function_exists( 'add_action' 
 						'type'		 => 'mcheckbox',
 						'section'	 => 'multi',
 					),
+
+					array(
+						'id'		 => 'demo_mselect',
+						'title'		 => __('Multi-Select'),
+						'desc'		 => __('The description of multi-select'),
+						'choices'	 => array(
+								'' => 'Please select',
+								'yes'	 => 'Yes',
+								'no'	 => 'No',
+								'maybe'	 => 'Maybe'
+						),
+						'std'		 => array( 'yes', 'no' ),
+						'size'		 => 0,
+						'type'		 => 'mselect',
+						'section'	 => 'multi',
+					),
+
 				)
 			);
 
@@ -172,7 +189,7 @@ if( !class_exists( 'Settings_API_Class_Demo' ) && function_exists( 'add_action' 
 		
 		public static function validate_input( $input )
 		{
-			//wp_die( var_dump( $input ) );
+			wp_die( var_dump( $input ) );
 			return $input;
 		}
 		
