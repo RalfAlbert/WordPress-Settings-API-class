@@ -47,7 +47,7 @@ class Easy_Settings_API_Class
 	 * The HTML output object
 	 * @var object $output
 	 */
-	private $output;
+	private $output = null;
 	
 	/**
 	 * 
@@ -56,6 +56,15 @@ class Easy_Settings_API_Class
 	 */
 	public $output_class;
 	
+	private $output_class_standard = ;
+	
+	/**
+	 * 
+	 * Options read from database
+	 * @var array $options
+	 */
+	protected $options = array();
+		
 	/**
 	 *
 	 * All settings
@@ -174,7 +183,7 @@ class Easy_Settings_API_Class
 	 * @since 0.1
 	 * @access public
 	 */
-	public function setup() {
+	protected function setup() {
 		if( empty( $this->_settings ) )
 			throw new Exception( 'No settings was set' );
 						
@@ -203,14 +212,54 @@ class Easy_Settings_API_Class
 
 		// cleanup your mess
 		unset( $whitelist_where, $whitelist_vars, $value, $key, $settings, $defaults );
-
 					
-		// setup the outpclass
-		if( '' == $this->output_class )
-			$this->set_output_class( 'Settings_API_Class_HTML_Output' );
-		
-		// create the html-output object
-		$this->output = new $this->output_class;
+		$this->set_output();
+	}
+	
+	/**
+	 *
+	 * Adding the page to the menu and register the settings
+	 * @param none
+	 * @return none
+	 * @uses add_action()
+	 * @since 0.1
+	 * @access public
+	 */
+	protected function init() {
+		add_action( 'admin_menu', array( &$this, 'add_page' ) );
+		add_action( 'admin_init', array( &$this, 'register_settings' ) );
+	}
+
+	/**
+	 * 
+	 * Return options from database
+	 * @param string $options_name
+	 */
+	protected function get_option( $options_name ){
+		if( empty( $this->options ) )
+			$this->options = get_option( $options_name );
+			
+		return $this->options;
+	}
+	
+	protected function set_output(){
+		if( null === $this->output ){		
+			// setup the outputclass
+			if( '' == $this->output_class )
+				$this->set_output_class( 'Settings_API_Class_HTML_Output' );
+				
+			// create the html-output object
+			$this->output = new $this->output_class;
+		}
+		else
+			return $this->output;		
+	}
+	
+	protected function get_output(){
+		if( null === $this->output )
+			$this->set_output();
+			
+		return $this->output;
 	}
 	
 	/**
@@ -261,20 +310,6 @@ class Easy_Settings_API_Class
 	
 	/**
 	 *
-	 * Adding the page to the menu and register the settings
-	 * @param none
-	 * @return none
-	 * @uses add_action()
-	 * @since 0.1
-	 * @access public
-	 */
-	public function init() {
-		add_action( 'admin_menu', array( &$this, 'add_page' ) );
-		add_action( 'admin_init', array( &$this, 'register_settings' ) );
-	}
-
-	/**
-	 *
 	 * Add the page to the admin menu. Store page-hook in $_settings.
 	 * @param none
 	 * @return none
@@ -284,7 +319,7 @@ class Easy_Settings_API_Class
 	 */
 	public function add_page() {
 		$where = 'add_' . $this->menu_position . '_page';
-		$this->_settings['admin_page'] = $where( $this->page_title, $this->menu_title, $this->capability, $this->page_slug, array( &$this->output, 'display_page' ) );
+		$this->_settings['admin_page'] = $where( $this->page_title, $this->menu_title, $this->capability, $this->page_slug, array( &$this, 'display_page' ) );
 	}
 
 	/**
@@ -303,7 +338,7 @@ class Easy_Settings_API_Class
 		register_setting( $this->options_group, $this->options_name, $this->validate_callback );
 
 		foreach( $this->sections as $slug => $title ) {
-			add_settings_section( $slug, $title, array( &$this->output, 'display_section' ), $this->page_slug );
+			add_settings_section( $slug, $title, array( &$this, 'display_section' ), $this->page_slug );
 		}
 
 		foreach ( $this->settings_fields as $field ) {
@@ -324,78 +359,17 @@ class Easy_Settings_API_Class
 	 * @access public
 	 */
 	public function create_setting( $args = array() ) {
-
-		$defaults = array(
-			'title'		 => 'Empty',
-			'section'	 => 'general',
+		$this->set_output();
 		
-			'id'		 => 'default_field',
-			'desc'		 => '',
-			'text_after' => '',
-			'std'		 => '',
-			'type'		 => 'text',
-			'size'		 => 0,
-			'rows'		 => 3,
-			'cols'		 => 25,
-			'choices'	 => array(),
-			'arguments' => array(),
-			'class'		 => ''
-		);
-		
-		wp_parse_args( $args, $defaults );
+		wp_parse_args( $args, $this->output->single_setting_defaults );
 		
 		// copy the 'id' to 'label_for'
 		$args['label_for'] = $args['id'];
 
-		add_settings_field( $args['id'], $args['title'], array( &$this->output, 'display_settings_field' ), $this->page_slug, $args['section'], $args );
+		add_settings_field( $args['id'], $args['title'], array( &$this, 'display_settings_field' ), $this->page_slug, $args['section'], $args );
 		
 		//cleanup
 		unset( $args, $defaults );
-	}
-	
-/* --------------- sanitizing --------------- */ 
-	/**
-	 *
-	 * Sanitizing the users data
-	 * Strings will be sanitize with esc_attr, all other values will be cast to integer (we only need strings and integer)
-	 * @param mixed $data
-	 * @return none $data will be modified by reference
-	 * @since 0.2.1
-	 * @access private
-	 */
-	private function sanitize_settings( &$data ) {
-		if ( is_string( $data ) )
-			esc_attr( $data );
-		else
-			$data = intval( $data );
-	}	
-} // end_class_Easy_Settings_API_Class
-
-class Easy_Settings_API_Class_HTML_Output extends Easy_Settings_API_Class
-{
-	/**
-	 * 
-	 * Options read from database
-	 * @var array $options
-	 */
-	private $options = array();
-	
-	public function __construct( array $settings )
-	{
-		// get options from database
-		$this->get_option( $this->options_name );		
-	}	
-
-	/**
-	 * 
-	 * Return options from database
-	 * @param string $options_name
-	 */
-	protected function get_option( $options_name ){
-		if( empty( $this->options ) )
-			$this->options = get_option( $options_name );
-			
-		return $this->options;
 	}
 	
 	/**
@@ -409,21 +383,14 @@ class Easy_Settings_API_Class_HTML_Output extends Easy_Settings_API_Class
 	 * @access public
 	 */
 	public function display_page() {
-		echo '<div class="wrap">
-		<div class="icon32" id="' . $this->icon . '"></div>
-		<h2>' . $this->page_title . '</h2>';
-
-		if ( isset( $this->description ) )
-			echo '<p>' . $this->description . '</p>';
-
-		echo '
-		<form action="options.php" method="post">
-			';
+		$this->set_output();
+				
+		echo $this->output->page_content_top;
+		
 		settings_fields( $this->options_group );
 		do_settings_sections( $this->page_slug );
-
-		echo '<p class="submit"><input name="Submit" type="submit" class="button-primary" value="' . __('Save Changes') . '" /></p>
-		</form>';
+		
+		echo $this->output->page_content_footer;
 	}
 
 	/**
@@ -472,6 +439,8 @@ class Easy_Settings_API_Class_HTML_Output extends Easy_Settings_API_Class
 		/*
 		 * prepare the output
 		 */
+
+		$this->set_output();
 		
 		// set standard for multi checkbox
 		if( ( isset( $this->std ) && is_array( $this->std ) ) && 
@@ -495,7 +464,7 @@ class Easy_Settings_API_Class_HTML_Output extends Easy_Settings_API_Class
 
 		// display setting field
 		$field = $this->type;
-		$this->$field();
+		$this->output->$field();
 		
 		// reset vars
 		foreach( $args as $key => $value ){
@@ -505,6 +474,63 @@ class Easy_Settings_API_Class_HTML_Output extends Easy_Settings_API_Class
 		
 		unset( $args, $key, $whitelist_vars, $field );
 	}
+
+/* --------------- sanitizing --------------- */ 
+	/**
+	 *
+	 * Sanitizing the users data
+	 * Strings will be sanitize with esc_attr, all other values will be cast to integer (we only need strings and integer)
+	 * @param mixed $data
+	 * @return none $data will be modified by reference
+	 * @since 0.2.1
+	 * @access private
+	 */
+	private function sanitize_settings( &$data ) {
+		if ( is_string( $data ) )
+			esc_attr( $data );
+		else
+			$data = intval( $data );
+	}	
+} // end_class_Easy_Settings_API_Class
+
+class Easy_Settings_API_Class_HTML_Output extends Easy_Settings_API_Class
+{
+	public $single_setting_defaults = array(); 
+
+	public $page_content_top;
+	public $page_content_footer;
+	
+	public function __construct( array $settings )
+	{
+		$this->page_content_top = '<div class="wrap">
+		<div class="icon32" id="' . $this->icon . '"></div>
+		<h2>' . $this->page_title . '</h2>';
+
+		if ( isset( $this->description ) )
+			$this->page_content_top .= '<p>' . $this->description . '</p>';
+
+		$this->page_content_top .= '<form action="options.php" method="post">';
+		
+		$this->page_content_footer = '<p class="submit"><input name="Submit" type="submit" class="button-primary" value="' . __('Save Changes') . '" /></p></form></div>';
+
+		$this->single_setting_defaults = array(
+			'title'		 => 'Empty',
+			'section'	 => 'general',
+		
+			'id'		 => 'default_field',
+			'desc'		 => '',
+			'text_after' => '',
+			'std'		 => '',
+			'type'		 => 'text',
+			'size'		 => 0,
+			'rows'		 => 3,
+			'cols'		 => 25,
+			'choices'	 => array(),
+			'arguments'  => array(),
+			'class'		 => ''
+		);
+		
+	}	
 
 /* ------------ display settings fields ------------ */
 	

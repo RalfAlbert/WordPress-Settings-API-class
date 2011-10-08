@@ -19,10 +19,10 @@
  * Licence: GPL
  */
 
-if( !class_exists( 'Settings_API_Class' ) )
-	require_once dirname( __FILE__ ) . '/class-settings_api.php';
+if( ! class_exists( 'Easy_Settings_API_Class' ) )
+	require_once dirname( __FILE__ ) . '/class-easy_settings_api.php';
 
-if( !class_exists( 'Settings_API_Class_Demo' ) && function_exists( 'add_action' ) ) 
+if( ! class_exists( 'Settings_API_Class_Demo' ) && function_exists( 'add_action' ) ) 
 {
 	add_action( 'plugins_loaded', create_function( NULL, '$a = new Settings_API_Class_Demo();' ) );
 
@@ -63,7 +63,7 @@ if( !class_exists( 'Settings_API_Class_Demo' ) && function_exists( 'add_action' 
 					'multi'		 => __('More than one choice are available.'),
 				),
 
-				'settings_fields'			 => array(
+				'settings_fields'	 => array(
 					array(
 						'id'		 => 'demo_heading',
 						'title'		 => 'Heading',
@@ -179,7 +179,7 @@ if( !class_exists( 'Settings_API_Class_Demo' ) && function_exists( 'add_action' 
 			);
 
 			// start the class
-			$optionpage = new Settings_API_Class( $settings );
+			$optionpage = new Easy_Settings_API_Class( $settings );
 
 			// optional way to initialize and start the class
 			// $optionpage->set_settings( $settings );
