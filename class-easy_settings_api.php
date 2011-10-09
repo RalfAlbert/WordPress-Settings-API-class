@@ -40,7 +40,7 @@
  * [2] http://alisothegeek.com/2011/01/wordpress-settings-api-tutorial-1/
  */
 
-require_once 'class-easy_settings_api_html_output.php';
+//require_once 'class-easy_settings_api_html_output.php';
 
 class Easy_Settings_API
 {
@@ -251,6 +251,9 @@ class Easy_Settings_API
 			if( '' == $this->output_class )
 				$this->set_output_class( $this->output_class_standard );
 				
+			if( ! class_exists( $this->output_class_standard ) )
+				require_once 'class-'.strtolower( $this->output_class_standard ).'.php';
+				
 			// create the html-output object
 			$this->output = new $this->output_class;
 		}
@@ -456,8 +459,6 @@ class Easy_Settings_API
 		if( ! isset( $this->options[$id] ) && isset( $std ) )
 			$this->options[$id] = $std;
 
-$this->output->options = get_option( $this->options_name );
-var_dump($this->output->options);			
 		// set css class
 		$this->output->field_class = '';
 		if( ! empty( $class ) )
