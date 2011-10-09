@@ -31,96 +31,194 @@
  This plugin requires WordPress >= 3.0 and tested with PHP Interpreter >= 5.2.9
  */
 
-if( ! class_exists( 'Settings_API_Class_HTML_Output' ) )
+if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 {
-	class Easy_Settings_API_Class_HTML_Output
-	{
-		private $options = array();
+	class Easy_Settings_API_HTML_Output
+	{		
+		public $single_setting_defaults = array();
+		
+		public static $options;
+		
+		private static $setting_defaults;
 				
-		public function __construct( array $settings )
+		public function __construct()
 		{
+			$this->single_setting_defaults = array(
+				'title'		 => 'Empty',
+				'section'	 => 'general',			
+				'id'		 => 'default_field',
+				'desc'		 => '',
+				'text_after' => '',
+				'std'		 => '',
+				'type'		 => 'text',
+				'size'		 => 0,
+				'rows'		 => 3,
+				'cols'		 => 25,
+				'choices'	 => array(),
+				'arguments' => array(),
+				'class'		 => ''
+			);
+			
+			self::$setting_defaults = (object) $this->single_setting_defaults;
+			self::$setting_defaults->options_name = 'empty';
+			
 		}
 		
+		public static function display_page( $args = null )
+		{
+			if( null === $args )
+				return false;
+
+			$def = new stdClass();
+			$def->icon = 'icon-options-general';
+			$def->page_title = __('Empty');
+			$def->description = __('Empty');
+			$def->options_group = '';
+			$def->page_slug = '';
+			
+			$args = self::parse_args( $args, $def, true );
+			
+			echo '
+			<div class="wrap">
+				<div class="icon32" id="' . $args->icon . '"></div>
+				<h2>' . $args->page_title . '</h2>
+			';
+
+				if ( '' != $args->description )
+					echo '<p>' . $args->description . '</p>';
+
+			echo '
+				<form action="options.php" method="post">
+			';
+			
+			settings_fields( $args->options_group );
+			do_settings_sections( $args->page_slug );
+			
+			echo '
+					<p class="submit">
+						<input name="Submit" type="submit" class="button-primary" value="' . __('Save Changes') . '" />
+					</p>
+				</form>
+			</div>
+			';			
+		}
 /* ------------ display settings fields ------------ */
+		/**
+		 * custom settings field
+		 */
+		public static function custom( $args )
+		{
+			if( isset( $this->callback ) ){
+				if( ! is_array( $this->callback ) )
+					return false;
+		
+				if( ! isset( $args ) )
+					$args = array();
+	
+				call_user_func_array( $this->callback, $args );
+			}
+		
+		}
+	
 		/**
 		 * 
 		 * display checkbox
 		 */
-		private function checkbox()
+		public static function checkbox( $args = null )
 		{
+			if( null === $args )
+				return false;
+
+			$args = self::parse_args( $args, self::$setting_defaults );
+
 			$checked = '';
-			if( isset( $this->options[$this->id]) && $this->options[$this->id] == 'on' )
+			if( isset( self::$options[$args->id]) && self::$options[$args->id] == 'on' )
 				$checked = ' checked="checked"';
 	
-			echo '<input' . $this->field_class . ' type="checkbox" id="' . $this->id . '" name="' . $this->options_name . '[' . $this->id . ']" value="on"' . $checked . ' /> <label for="' . $this->id . '">' . $this->text_after . '</label>';
+			echo '<input' . $args->class . ' type="checkbox" id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']" value="on"' . $checked . ' /> <label for="' . $args->id . '">' . $args->text_after . '</label>';
 	
-			$this->display_field_description( $this->desc );
+			self::display_field_description( $args->desc );
 		}
 	
 		/**
 		 * 
 		 * display select field
 		 */
-		private function select()
+		public static function select( $args = null )
 		{
+			if( null === $args )
+				return false;
+
+			$args = self::parse_args( $args, self::$setting_defaults );
+			
 			$lines = '';
-			if( isset( $this->size ) && 1 < $this->size )
-				$lines = ' size="' . $this->size . '"';
+			if( isset( $args->size ) && 1 < $args->size )
+				$lines = ' size="' . $args->size . '"';
 	
-			echo '<select' . $this->field_class . ' name="' . $this->options_name . '[' . $this->id . ']"' . $lines . ' style="height:100%">';
+			echo '<select' . $args->class . ' name="' . $args->options_name . '[' . $args->id . ']"' . $lines . ' style="height:100%">';
 	
-			foreach( $this->choices as $value => $label ) {
+			foreach( $args->choices as $value => $label ) {
 				$selected = '';
-				if( $this->options[$this->id] == $value )
+				if( isset( self::$options[$args->id] ) && self::$options[$args->id] == $value )
 					$selected = ' selected="selected"';
 				echo '<option value="' . $value . '"' . $selected . '>' . $label . '</option>';
 			}
 	
 			echo '</select>';
 	
-			$this->display_field_description( $this->desc );
+			self::display_field_description( $args->desc );
 		}
 		
 		/**
 		 * 
 		 * display radio buttons
 		 */
-		private function radio()
+		public static function radio( $args = null )
 		{
+			if( null === $args )
+				return false;
+
+			$args = self::parse_args( $args, self::$setting_defaults );
+			
 			$i = 0;
 			
-			foreach( $this->choices as $value => $label) {
+			foreach( $args->choices as $value => $label) {
 				$selected = '';
-				if( $this->options[$this->id] == $value)
+				if( isset( self::$options[$args->id] ) && self::$options[$args->id] == $value )
 					$selected = ' checked="checked"';
 	
-				echo '<input' . $this->field_class . ' type="radio" name="' . $this->options_name . '[' . $this->id . ']" id="' . $this->id . $i . '" value="' . $value . '"' . $selected . '> <label for="' . $this->id . $i . '">' . $label . '</label>';
+				echo '<input' . $args->class . ' type="radio" name="' . $args->options_name . '[' . $args->id . ']" id="' . $args->id . $i . '" value="' . $value . '"' . $selected . '> <label for="' . $args->id . $i . '">' . $label . '</label>';
 	
-				if( $i < count( $this->choices ) - 1)
+				if( $i < count( $args->choices ) - 1)
 					echo '<br />';
 	
 				$i++;
 			}
 	
-			$this->display_field_description( $this->desc );
+			self::display_field_description( $args->desc );
 		}	
 		
 		/**
 		 * 
 		 * display checkboxes with multiple selection
 		 */
-		private function mcheckbox()
+		public static function mcheckbox( $args = null )
 		{
+			if( null === $args )
+				return false;
+
+			$args = self::parse_args( $args, self::$setting_defaults );
+			
 			$i = 0;
 	
-			foreach( $this->choices as $key => $label) {
+			foreach( $args->choices as $key => $label) {
 				$checked = '';
-				if( isset( $this->options[$this->id . '-' . $key]) && 'on' == $this->options[$this->id . '-' . $key])
+				if( isset( self::$options[$args->id . '-' . $key]) && 'on' == self::$options[$args->id . '-' . $key])
 					$checked = ' checked="checked"';
 	
-				echo '<input' . $this->field_class . ' type="checkbox" id="' . $this->id . '-' . $key . '" name="' . $this->options_name . '[' . $this->id . '-' . $key . ']" value="on"' . $checked . ' /> <label for="' . $this->id . '">' . $label . '</label>';
+				echo '<input' . $args->class . ' type="checkbox" id="' . $args->id . '-' . $key . '" name="' . $args->options_name . '[' . $args->id . '-' . $key . ']" value="on"' . $checked . ' /> <label for="' . $args->id . '">' . $label . '</label>';
 	
-				if ( $i < count( $this->choices ) - 1 )
+				if ( $i < count( $args->choices ) - 1 )
 					echo '<br />';
 	
 				$i++;
@@ -128,74 +226,107 @@ if( ! class_exists( 'Settings_API_Class_HTML_Output' ) )
 			
 			// this hidden input is neccessary to identify if the form is already saved
 			// or if it is the initial form with standard values
-			echo '<input type="hidden" name="' . $this->options_name . '[' . $this->id . ']" value="on" />';
+			echo '<input type="hidden" name="' . $args->options_name . '[' . $args->id . ']" value="on" />';
 			
-			$this->display_field_description( $this->desc );
+			self::display_field_description( $args->desc );
 		}
 		
 		/**
 		 * 
 		 * display select field with multiple selection
 		 */
-		private function mselect()
+		public static function mselect( $args = null )
 		{
+			if( null === $args )
+				return false;
+
+			$args = self::parse_args( $args, self::$setting_defaults );
+			
 			$lines = '';
-			if( isset( $this->size ) && 1 < $this->size )
-				$lines = ' size="' . $this->size . '"';
+			if( isset( $args->size ) && 1 < $args->size )
+				$lines = ' size="' . $args->size . '"';
 	
-			echo '<select' . $this->field_class . ' name="' . $this->options_name . '[]"' . $lines . ' multiple="multiple" style="height:100%">';
+			echo '<select' . $args->class . ' name="' . $args->options_name . '[]"' . $lines . ' multiple="multiple" style="height:100%">';
 	
-			foreach( $this->choices as $key => $label ) {
+			foreach( $args->choices as $key => $label ) {
 				$selected = '';
-				if( isset( $this->options[$this->id . '-' . $key] ) )
+				if( isset( self::$options[$args->id . '-' . $key] ) )
 					$selected = ' selected="selected"';
 				echo '<option value="' . $key . '"' . $selected . '>' . $label . '</option>';
 			}
 	
 			echo '</select>';
 			
-			$this->display_field_description( $this->desc );
+			self::display_field_description( $args->desc );
 		}
 		
 		/**
 		 * 
 		 * display textarea
 		 */
-		private function textarea()
+		public static function textarea( $args = null )
 		{
-			echo '<textarea' . $this->field_class . ' id="' . $this->id . '" name="' . $this->options_name . '[' . $this->id . ']" rows="' . $this->rows . '" cols="' . $this->cols . '" placeholder="' . $this->std . '">' . esc_textarea( $this->options[$this->id] ) . '</textarea>';
-			$this->display_field_description( $this->desc );		
+			if( null === $args )
+				return false;
+
+			$args = self::parse_args( $args, self::$setting_defaults );
+			
+			$value = isset( self::$options[$args->id] ) ? self::$options[$args->id] : $args->std;
+			
+			echo '<textarea' . $args->class . ' id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']" rows="' . $args->rows . '" cols="' . $args->cols . '" placeholder="' . $args->std . '">' . esc_textarea( $value ) . '</textarea>';
+			self::display_field_description( $args->desc );		
 		}
 		
 		/**
 		 * 
 		 * display password field
 		 */
-		private function password()
+		public static function password( $args = null )
 		{
-			echo '<input' . $this->field_class . ' type="password" id="' . $this->id . '" name="' . $this->options_name . '[' . $this->id . ']" value="' . $this->options[$this->id] . '" />' . $this->text_after;
-			$this->display_field_description( $this->desc );
+			if( null === $args )
+				return false;
+
+			$args = self::parse_args( $args, self::$setting_defaults );
+			
+			$value = isset( self::$options[$args->id] ) ? self::$options[$args->id] : $args->std;
+			
+			echo '<input' . $args->class . ' type="password" id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']" value="' . $value . '" />' . $args->text_after;
+			self::display_field_description( $args->desc );
 		}
 		
 		/**
 		 * 
 		 * display input field
 		 */
-		private function text()
+		public static function text( $args = null )
 		{
-			echo '<input' . $this->field_class . ' type="text" size="' . $this->size . ' id="' . $this->id . '" name="' . $this->options_name . '[' . $this->id . ']"
-				placeholder="' . $this->std . '" value="' . esc_html( $this->options[$this->id] ) . '" />' . $this->text_after;
-			$this->display_field_description( $this->desc );
-	
+			if( null === $args )
+				return false;
+
+			$args = self::parse_args( $args, self::$setting_defaults );
+			
+			$value = isset( self::$options[$args->id] ) ? self::$options[$args->id] : $args->std;
+			
+			echo '<input' . $args->class . ' type="text" size="' . $args->size . ' id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']"
+				placeholder="' . $args->std . '" value="' . esc_html( $value ) . '" />' . $args->text_after;
+			self::display_field_description( $args->desc );	
 		}
 		
 		/**
 		 * 
 		 * display heading
 		 */
-		private function heading()
+		public static function heading( $args )
 		{
-			echo '</td></tr><tr valign="top"><td colspan="2">' . $this->desc;		
+			if( null === $args )
+				return false;
+
+			$def = new stdClass();
+			$def->desc = '';
+			
+			$args = self::parse_args( $args, $def, true );
+						
+			echo '</td></tr><tr valign="top"><td colspan="2">' . $args->desc;
 		}
 		
 		/**
@@ -204,12 +335,59 @@ if( ! class_exists( 'Settings_API_Class_HTML_Output' ) )
 		 * @param string $desc
 		 * @return none
 		 * @since 0.2
-		 * @access private
+		 * @access public static
 		 */
-		private function display_field_description( $desc ) {
+		public static function display_field_description( $desc ) {
 			if( ! empty( $desc ) )
 				echo '<br /><small>' . $desc . '</small>';
-		}	
+		}
+		
+		public function set_options( $options = null )
+		{
+			if( null !== $options )
+				self::$options = $options;
+		}
+		
+		public function get_options()
+		{
+			return self::$options;
+		}
+		
+		
+		/**
+		 * 
+		 * Parsing arguments
+		 * 
+		 * Retrieving two objects and fill the input-object with the default-object
+		 * If the optional parameter $cleaning is set to true, keys which are not set in
+		 * the defaults-object will be deleted.
+		 * 
+		 * @since 0.5
+		 * @access public static
+		 * @param object $input
+		 * @param object $defaults
+		 * @param bool $cleaning
+		 * @return object $input parsed (and cleanded) object
+		 */
+		public static function parse_args( $input = null, $defaults = null, $cleaning = false ){
+			if( null === $input || null === $defaults )
+				return false;
+			
+			foreach( $defaults as $key => $value ){
+				if( ! isset( $input->$key ) )
+					$input->$key = $defaults->$key;
+			}
+			
+			if( $cleaning ){
+				foreach( $input as $key => $value ){
+					if( ! isset( $defaults->$key ) )
+						unset( $input->$key );
+				}
+			}
+			
+			return $input;
+		}
+
 
 	}// end class_Settings_API_Class_HTML_Output
 } // end if_class_exists

@@ -389,12 +389,15 @@ class Easy_Settings_API
 	 */
 	public function display_page() {
 		$this->set_output();
-		echo $this->output->page_content_top;
+
+		$args = new stdClass();
+		$args->options_group = $this->options_group;
+		$args->page_slug = $this->page_slug;
+		$args->description = $this->description;
+		$args->page_title = $this->page_title;
+		$args->icon = $this->icon;
 		
-		settings_fields( $this->options_group );
-		do_settings_sections( $this->page_slug );
-		
-		echo $this->output->page_content_footer;
+		$this->output->display_page( $args );
 	}
 
 	/**
@@ -426,16 +429,15 @@ class Easy_Settings_API
 		 */
 
 		$this->set_output();
-
-		$this->get_option( $this->options_name );
+$this->options = get_option( $this->options_name );
+		//$this->get_option( $this->options_name );
+var_dump($this->options);	
+//		if( null === $this->output->get_options() )
+			$this->output->set_options( $this->options );
 
 		// extracting vars for display in $output
 		$whitelist_vars = $this->output->single_setting_defaults; //array( 'id', 'type', 'std', 'class', 'desc' );
-
-		foreach( $args as $key => $value ){
-			if( key_exists( $key, $whitelist_vars ) )
-				$this->output->$key = $value;
-		}
+		$args = wp_parse_args( $args, $whitelist_vars );
 
 		$copy_vars = array( 'id', 'type', 'std', 'class' );
 		
@@ -460,21 +462,22 @@ class Easy_Settings_API
 			$this->options[$id] = $std;
 
 		// set css class
-		$this->output->field_class = '';
 		if( ! empty( $class ) )
-			$this->output->field_class = ' class="' . $class . '"';
+			$args->class = ' class="' . $class . '"';
 
+
+		$args = (object) $args;
+		//$args->options = $this->options;
+		
 		// display setting field
-		$field = $type;
-		$this->output->$field();
+		call_user_func( array( $this->output, $type ), $args );
+			//$this->output::$type( (object) $args );
 		
 		// reset vars
 		foreach( $args as $key => $value ){
 			if( key_exists( $key, $whitelist_vars ) )
 				unset( $this->output->$key );
 		}
-		
-		$this->output->options = array();
 		
 		unset( $args, $key, $whitelist_vars, $field );
 	}
