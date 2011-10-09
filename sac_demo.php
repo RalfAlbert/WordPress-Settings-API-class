@@ -43,7 +43,7 @@ if( ! class_exists( 'Settings_API_Class_Demo' ) && function_exists( 'add_action'
 			$settings = array(
 				'options_group'		 => self::OPTIONS_GROUP,
 				'options_name'		 => self::OPTIONS_NAME,
-				'validate_callback'	 => 'Settings_API_Class_Demo::validate_input',
+				'validate_callback'	 => '', //array( __CLASS__, 'validate_input' ),   //'Settings_API_Class_Demo::validate_input',
 
 				'menu_position'		 => 'options',
 				'page_slug'			 => 'sac_demopage',
@@ -179,17 +179,18 @@ if( ! class_exists( 'Settings_API_Class_Demo' ) && function_exists( 'add_action'
 			);
 
 			// start the class
-			$optionpage = new Easy_Settings_API_Class( $settings );
+			$optionpage = new Easy_Settings_API( $settings );
 
 			// optional way to initialize and start the class
 			// $optionpage->set_settings( $settings );
-			// $optionpage->init();			
+			// $optionpage->create_option_page();			
 
 		}
 		
 		public static function validate_input( $input )
 		{
-			wp_die( var_dump( $input ) );
+			var_dump( $_POST );
+			//wp_die( var_dump( $input ) );
 			return $input;
 		}
 		

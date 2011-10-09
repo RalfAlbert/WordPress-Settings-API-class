@@ -40,7 +40,9 @@
  * [2] http://alisothegeek.com/2011/01/wordpress-settings-api-tutorial-1/
  */
 
-class Easy_Settings_API_Class
+require_once 'class-easy_settings_api_html_output.php';
+
+class Easy_Settings_API
 {
 	/**
 	 * 
@@ -56,7 +58,7 @@ class Easy_Settings_API_Class
 	 */
 	public $output_class;
 	
-	private $output_class_standard = ;
+	private $output_class_standard = 'Easy_Settings_API_HTML_Output';
 	
 	/**
 	 * 
@@ -70,7 +72,7 @@ class Easy_Settings_API_Class
 	 * All settings
 	 * @var array
 	 */
-	private $_settings = array();
+	protected $_settings = array();
 	
 	/**
 	 *
@@ -200,9 +202,10 @@ class Easy_Settings_API_Class
 		// extract vars from $settings
 		// copy needed vars from array $settings to the class-object
 		$whitelist_vars = array(
-			'options_group', 'options_name', 'validate_callback',
-			'menu_position', 'page_slug', 'page_title', 'menu_title',
-			'capability', 'description', 'icon',
+				'options_group', 'options_name', 'validate_callback',
+				'menu_position', 'page_slug', 'page_title', 'menu_title',
+				'description', 'capability', 'icon',
+				'sections', 'section_desc', 'settings_fields',
 		);
 		
 		foreach( $this->_settings as $key => &$value ){
@@ -246,7 +249,7 @@ class Easy_Settings_API_Class
 		if( null === $this->output ){		
 			// setup the outputclass
 			if( '' == $this->output_class )
-				$this->set_output_class( 'Settings_API_Class_HTML_Output' );
+				$this->set_output_class( $this->output_class_standard );
 				
 			// create the html-output object
 			$this->output = new $this->output_class;
@@ -334,7 +337,6 @@ class Easy_Settings_API_Class
 	 * @access public
 	 */
 	public function register_settings() {
-
 		register_setting( $this->options_group, $this->options_name, $this->validate_callback );
 
 		foreach( $this->sections as $slug => $title ) {
@@ -384,7 +386,6 @@ class Easy_Settings_API_Class
 	 */
 	public function display_page() {
 		$this->set_output();
-				
 		echo $this->output->page_content_top;
 		
 		settings_fields( $this->options_group );
@@ -401,7 +402,7 @@ class Easy_Settings_API_Class
 	 * @since 0.1
 	 * @access public
 	 */
-	public function display_section( array $section ) {
+	public function display_section( array $section ) {		
 		if ( key_exists( $section['id'], $this->section_descs ) )
 			echo $this->section_descs[$section['id']];
 	}
@@ -418,59 +419,61 @@ class Easy_Settings_API_Class
 	 */
 	public function display_settings_field( array $args ) {
 		/*
-		 * collectinc the vars
-		 * 
-		 * extract vars from array
-		 * do not use list() because the vars will be used in the displaying-methods
-		 * only copy vars that will be needed
-		 * 
-		 */
-		$whitelist_vars = array( 'id', 'type', 'std', 'class' );
-		
-		foreach( $args as $key => &$value ){
-			if( in_array( $key, $whitelist_vars ) )
-				$this->$key = $value;
-		}
-			
-
-		// $this->options was normally defined in __constructor.
-		$this->get_option( $this->options_name );
-
-		/*
 		 * prepare the output
 		 */
 
 		$this->set_output();
+
+		$this->get_option( $this->options_name );
+
+		// extracting vars for display in $output
+		$whitelist_vars = $this->output->single_setting_defaults; //array( 'id', 'type', 'std', 'class', 'desc' );
+
+		foreach( $args as $key => $value ){
+			if( key_exists( $key, $whitelist_vars ) )
+				$this->output->$key = $value;
+		}
+
+		$copy_vars = array( 'id', 'type', 'std', 'class' );
+		
+		foreach( $copy_vars as $cv ){
+			if( isset( $args[$cv] ) )
+				$$cv = $args[$cv];
+		}
 		
 		// set standard for multi checkbox
-		if( ( isset( $this->std ) && is_array( $this->std ) ) && 
-			( $this->type == 'mcheckbox' || $this->type == 'mselect') &&
-			! isset( $this->options[$this->id] ) ) {
+		if( ( isset( $std ) && is_array( $std ) ) && 
+			( $type == 'mcheckbox' || $type == 'mselect') &&
+			! isset( $this->options[$id] ) ) {
 
-			 	foreach( $this->std as $key ) {
-					if( ! isset( $this->options[$this->id . '-' . $key] ) )
-						$this->options[$this->id . '-' . $key] = 'on';
+			 	foreach( $std as $key ) {
+					if( ! isset( $this->options[$id . '-' . $key] ) )
+						$this->options[$id . '-' . $key] = 'on';
 				}
 		 }
 
 		// set standard for all other
-		if( ! isset( $this->options[$this->id] ) && isset( $this->std ) )
-			$this->options[$this->id] = $this->std;
+		if( ! isset( $this->options[$id] ) && isset( $std ) )
+			$this->options[$id] = $std;
 
+$this->output->options = get_option( $this->options_name );
+var_dump($this->output->options);			
 		// set css class
-		$this->field_class = '';
-		if( ! empty( $this->class ) )
-			$this->field_class = ' class="' . $this->class . '"';
+		$this->output->field_class = '';
+		if( ! empty( $class ) )
+			$this->output->field_class = ' class="' . $class . '"';
 
 		// display setting field
-		$field = $this->type;
+		$field = $type;
 		$this->output->$field();
 		
 		// reset vars
 		foreach( $args as $key => $value ){
-			if( in_array( $key, $whitelist_vars ) && isset( $this->key ) )
-				unset( $this->$key );
+			if( key_exists( $key, $whitelist_vars ) )
+				unset( $this->output->$key );
 		}
+		
+		$this->output->options = array();
 		
 		unset( $args, $key, $whitelist_vars, $field );
 	}
@@ -492,232 +495,3 @@ class Easy_Settings_API_Class
 			$data = intval( $data );
 	}	
 } // end_class_Easy_Settings_API_Class
-
-class Easy_Settings_API_Class_HTML_Output extends Easy_Settings_API_Class
-{
-	public $single_setting_defaults = array(); 
-
-	public $page_content_top;
-	public $page_content_footer;
-	
-	public function __construct( array $settings )
-	{
-		$this->page_content_top = '<div class="wrap">
-		<div class="icon32" id="' . $this->icon . '"></div>
-		<h2>' . $this->page_title . '</h2>';
-
-		if ( isset( $this->description ) )
-			$this->page_content_top .= '<p>' . $this->description . '</p>';
-
-		$this->page_content_top .= '<form action="options.php" method="post">';
-		
-		$this->page_content_footer = '<p class="submit"><input name="Submit" type="submit" class="button-primary" value="' . __('Save Changes') . '" /></p></form></div>';
-
-		$this->single_setting_defaults = array(
-			'title'		 => 'Empty',
-			'section'	 => 'general',
-		
-			'id'		 => 'default_field',
-			'desc'		 => '',
-			'text_after' => '',
-			'std'		 => '',
-			'type'		 => 'text',
-			'size'		 => 0,
-			'rows'		 => 3,
-			'cols'		 => 25,
-			'choices'	 => array(),
-			'arguments'  => array(),
-			'class'		 => ''
-		);
-		
-	}	
-
-/* ------------ display settings fields ------------ */
-	
-	/**
-	 * custom settings field
-	 */
-	private function custom( $args )
-	{
-		if( isset( $this->callback ) ){
-			if( ! is_array( $this->callback ) )
-				return false;
-	
-			if( ! isset( $args ) )
-				$args = array();
-
-			call_user_func_array( $this->callback, $args );
-		}
-	
-	}
-	
-	/**
-	 * 
-	 * display checkbox
-	 */
-	private function checkbox()
-	{
-		$checked = '';
-		if( isset( $this->options[$this->id]) && $this->options[$this->id] == 'on' )
-			$checked = ' checked="checked"';
-
-		echo '<input' . $this->field_class . ' type="checkbox" id="' . $this->id . '" name="' . $this->options_name . '[' . $this->id . ']" value="on"' . $checked . ' /> <label for="' . $this->id . '">' . $this->text_after . '</label>';
-
-		$this->display_field_description( $this->desc );
-	}
-	
-	/**
-	 * 
-	 * display select field
-	 */
-	private function select()
-	{
-		$lines = '';
-		if( isset( $this->size ) && 1 < $this->size )
-			$lines = ' size="' . $this->size . '"';
-
-		echo '<select' . $this->field_class . ' name="' . $this->options_name . '[' . $this->id . ']"' . $lines . ' style="height:100%">';
-
-		foreach( $this->choices as $value => $label ) {
-			$selected = '';
-			if( $this->options[$this->id] == $value )
-				$selected = ' selected="selected"';
-			echo '<option value="' . $value . '"' . $selected . '>' . $label . '</option>';
-		}
-
-		echo '</select>';
-
-		$this->display_field_description( $this->desc );
-	}
-		
-	/**
-	 * 
-	 * display radio buttons
-	 */
-	private function radio()
-	{
-		$i = 0;
-		
-		foreach( $this->choices as $value => $label) {
-			$selected = '';
-			if( $this->options[$this->id] == $value)
-				$selected = ' checked="checked"';
-
-			echo '<input' . $this->field_class . ' type="radio" name="' . $this->options_name . '[' . $this->id . ']" id="' . $this->id . $i . '" value="' . $value . '"' . $selected . '> <label for="' . $this->id . $i . '">' . $label . '</label>';
-
-			if( $i < count( $this->choices ) - 1)
-				echo '<br />';
-
-			$i++;
-		}
-
-		$this->display_field_description( $this->desc );
-	}	
-		
-	/**
-	 * 
-	 * display checkboxes with multiple selection
-	 */
-	private function mcheckbox()
-	{
-		$i = 0;
-
-		foreach( $this->choices as $key => $label) {
-			$checked = '';
-			if( isset( $this->options[$this->id . '-' . $key]) && 'on' == $this->options[$this->id . '-' . $key])
-				$checked = ' checked="checked"';
-
-			echo '<input' . $this->field_class . ' type="checkbox" id="' . $this->id . '-' . $key . '" name="' . $this->options_name . '[' . $this->id . '-' . $key . ']" value="on"' . $checked . ' /> <label for="' . $this->id . '">' . $label . '</label>';
-
-			if ( $i < count( $this->choices ) - 1 )
-				echo '<br />';
-
-			$i++;
-		}
-		
-		// this hidden input is neccessary to identify if the form is already saved
-		// or if it is the initial form with standard values
-		echo '<input type="hidden" name="' . $this->options_name . '[' . $this->id . ']" value="on" />';
-		
-		$this->display_field_description( $this->desc );
-	}
-		
-	/**
-	 * 
-	 * display select field with multiple selection
-	 */
-	private function mselect()
-	{
-		$lines = '';
-		if( isset( $this->size ) && 1 < $this->size )
-			$lines = ' size="' . $this->size . '"';
-
-		echo '<select' . $this->field_class . ' name="' . $this->options_name . '[]"' . $lines . ' multiple="multiple" style="height:100%">';
-
-		foreach( $this->choices as $key => $label ) {
-			$selected = '';
-			if( isset( $this->options[$this->id . '-' . $key] ) )
-				$selected = ' selected="selected"';
-			echo '<option value="' . $key . '"' . $selected . '>' . $label . '</option>';
-		}
-
-		echo '</select>';
-		
-		$this->display_field_description( $this->desc );
-	}
-		
-	/**
-	 * 
-	 * display textarea
-	 */
-	private function textarea()
-	{
-		echo '<textarea' . $this->field_class . ' id="' . $this->id . '" name="' . $this->options_name . '[' . $this->id . ']" rows="' . $this->rows . '" cols="' . $this->cols . '" placeholder="' . $this->std . '">' . esc_textarea( $this->options[$this->id] ) . '</textarea>';
-		$this->display_field_description( $this->desc );		
-	}
-		
-	/**
-	 * 
-	 * display password field
-	 */
-	private function password()
-	{
-		echo '<input' . $this->field_class . ' type="password" id="' . $this->id . '" name="' . $this->options_name . '[' . $this->id . ']" value="' . $this->options[$this->id] . '" />' . $this->text_after;
-		$this->display_field_description( $this->desc );
-	}
-		
-	/**
-	 * 
-	 * display input field
-	 */
-	private function text()
-	{
-		echo '<input' . $this->field_class . ' type="text" size="' . $this->size . ' id="' . $this->id . '" name="' . $this->options_name . '[' . $this->id . ']"
-			placeholder="' . $this->std . '" value="' . esc_html( $this->options[$this->id] ) . '" />' . $this->text_after;
-		$this->display_field_description( $this->desc );
-
-	}
-		
-	/**
-	 * 
-	 * display heading
-	 */
-	private function heading()
-	{
-		echo '</td></tr><tr valign="top"><td colspan="2">' . $this->desc;		
-	}
-		
-	/**
-	 *
-	 * Helper function
-	 * @param string $desc
-	 * @return none
-	 * @since 0.2
-	 * @access private
-	 */
-	private function display_field_description( $desc ) {
-		if( ! empty( $desc ) )
-			echo '<br /><small>' . $desc . '</small>';
-	}	
-
-}// end Easy_Settings_API_Class_HTML_Output
