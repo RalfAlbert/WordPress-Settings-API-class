@@ -3,14 +3,14 @@
  * @package WordPress
  * @subpackage Settings-API class
  * @author Ralf Albert
- * @version 0.5.0
+ * @version 0.5.1
  * @license GPL
  */
 
 /**
  License:
  ==============================================================================
- Copyright 2010 Ralf Albert  (email : me@neun12.de)
+ Copyright 2011 Ralf Albert  (email : me@neun12.de)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -40,7 +40,6 @@
  * [2] http://alisothegeek.com/2011/01/wordpress-settings-api-tutorial-1/
  */
 
-//require_once 'class-easy_settings_api_html_output.php';
 if( ! class_exists( 'Easy_Settings_API' ) ){
 	class Easy_Settings_API
 	{
@@ -67,7 +66,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		
 		/**
 		 * 
-		 * Options read from database
+		 * Options from database
 		 * @var array $options
 		 */
 		protected $options = array();
@@ -132,7 +131,6 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 *
 		 * Setup the class-vars
 		 * Validate, sanitize and copy the settings
-		 * 
 		 * @param array $settings
 		 * @return bool true|false
 		 * @uses wp_parse_args()
@@ -234,9 +232,10 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		/**
 		 * 
 		 * Return options from database
-		 * 
 		 * @param string $options_name
 		 * @return array $options
+		 * @since 0.4
+		 * @access protected
 		 */
 		protected function get_options( $options_name ){
 			if( empty( $this->options ) )
@@ -249,9 +248,10 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * 
 		 * Returns the html-output-object
 		 * Create it if it does not exists
-		 * 
 		 * @param none
 		 * @return object $output
+		 * @since 0.3
+		 * @access protected
 		 */
 		protected function get_output(){
 			if( null === $this->output )
@@ -263,9 +263,10 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		/**
 		 * 
 		 * Setup the html-output-class and create the html-output-object
-		 * 
 		 * @param none
 		 * @return object $output
+		 * @since 0.3
+		 * @access protected
 		 */
 		protected function set_output(){
 			// create the output-object
@@ -515,10 +516,11 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * Check values of checkboxes after sending data via form
 		 * If a checkbox-value s not set, the checkbox was't selected.
 		 * In ths case the checkbox-value will be created and set to 0 (zero)
-		 * 
 		 * @param array $settings_fields Array with settings for fields (from $settings)
 		 * @param array $input Array with values send via POST
 		 * @return array $input Modified array
+		 * @since 0.5.1
+		 * @access public static
 		 */
 		public static function check_checkboxes( array $settings_fields, array $input ){		
 			foreach( $settings_fields as $field ){

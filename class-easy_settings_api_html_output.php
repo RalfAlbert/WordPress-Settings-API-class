@@ -10,7 +10,7 @@
 /**
  License:
  ==============================================================================
- Copyright 2010 Ralf Albert  (email : me@neun12.de)
+ Copyright 2011 Ralf Albert  (email : me@neun12.de)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -56,6 +56,14 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		 */
 		public static $options;
 		
+		/**
+		 * 
+		 * Constructor
+		 * @param none
+		 * @return void
+		 * @since 0.4
+		 * @access public
+		 */
 		public function __construct()
 		{
 			$this->settings_fields_defaults = array(
@@ -79,6 +87,14 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 			
 		}
 		
+		/**
+		 * 
+		 * Print the options-page frame
+		 * @param object $args
+		 * @return void
+		 * @since 0.4
+		 * @access public
+		 */
 		public static function display_page( $args = null )
 		{
 			if( null === $args )
@@ -117,7 +133,8 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 			</div>
 			';			
 		}
-/* ------------ display settings fields ------------ */
+		
+	/* ------------ display settings fields ------------ */
 		/**
 		 * custom settings field
 		 */
@@ -142,8 +159,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		}
 	
 		/**
-		 * 
-		 * display checkbox
+		 * checkbox
 		 */
 		public static function checkbox( $args = null )
 		{
@@ -162,8 +178,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		}
 	
 		/**
-		 * 
-		 * display select field
+		 * select field
 		 */
 		public static function select( $args = null )
 		{
@@ -191,8 +206,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		}
 		
 		/**
-		 * 
-		 * display radio buttons
+		 * radio buttons
 		 */
 		public static function radio( $args = null )
 		{
@@ -220,8 +234,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		}	
 		
 		/**
-		 * 
-		 * display checkboxes with multiple selection
+		 * checkboxes with multiple selection
 		 */
 		public static function mcheckbox( $args = null )
 		{
@@ -253,8 +266,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		}
 		
 		/**
-		 * 
-		 * display select field with multiple selection
+		 * select field with multiple selection
 		 */
 		public static function mselect( $args = null )
 		{
@@ -282,8 +294,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		}
 		
 		/**
-		 * 
-		 * display textarea
+		 * textarea
 		 */
 		public static function textarea( $args = null )
 		{
@@ -300,8 +311,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		}
 		
 		/**
-		 * 
-		 * display password field
+		 * password field
 		 */
 		public static function password( $args = null )
 		{
@@ -318,8 +328,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		}
 		
 		/**
-		 * 
-		 * display input field
+		 * input field
 		 */
 		public static function text( $args = null )
 		{
@@ -337,8 +346,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		}
 		
 		/**
-		 * 
-		 * display heading
+		 * heading
 		 */
 		public static function heading( $args )
 		{
@@ -357,7 +365,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		 *
 		 * Helper function
 		 * @param string $desc
-		 * @return none
+		 * @return void
 		 * @since 0.2
 		 * @access public static
 		 */
@@ -371,6 +379,8 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		 * Setter for $options
 		 * @param array $options
 		 * @return void
+		 * @since 0.5
+		 * @access public
 		 */
 		public function set_options( $options = null )
 		{
@@ -383,12 +393,13 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		 * Getter for $options
 		 * @param none
 		 * @return array $options
+		 * @since 0.5
+		 * @access public
 		 */
 		public function get_options()
 		{
 			return self::$options;
-		}
-		
+		}	
 		
 		/**
 		 * 
@@ -398,12 +409,12 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		 * If the optional parameter $cleaning is set to true, keys which are not set in
 		 * the defaults-object will be deleted.
 		 * 
-		 * @since 0.5
-		 * @access public static
 		 * @param object $input
 		 * @param object $defaults
 		 * @param bool $cleaning
 		 * @return object $input parsed (and cleanded) object
+		 * @since 0.5
+		 * @access public static
 		 */
 		public static function parse_args( $input = null, $defaults = null, $cleaning = false ){
 			if( null === $input || null === $defaults )
@@ -425,5 +436,5 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		}
 
 
-	}// end class_Settings_API_Class_HTML_Output
+	} // end class_Settings_API_Class_HTML_Output
 } // end if_class_exists

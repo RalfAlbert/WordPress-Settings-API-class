@@ -3,7 +3,7 @@
  * @package WordPress
  * @subpackage Settings API Class
  * @author Ralf Albert
- * @version 0.2.0
+ * @version 0.3.0
  *
  */
 
@@ -28,13 +28,42 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 
 	class Easy_Settings_API_Class_Demo
 	{
+		/**
+		 * 
+		 * Instance of this class. Will be used in validate_input()
+		 * @var object $plugin_self
+		 */
 		private static $plugin_self = null;
 		
+		/**
+		 * 
+		 * Instance of Easy_Settings_API. Will be used in validate_input()
+		 * @var object $options_page
+		 */
 		public static $options_page = null;
 		
+		/**
+		 * 
+		 * Name of the options in database
+		 * @var const string
+		 */
 		const OPTIONS_NAME = 'SAC_DEMO_SETTINGS';
+		
+		/**
+		 * 
+		 * Name of the options-group
+		 * @var const string
+		 */
 		const OPTIONS_GROUP = 'SAC_DEMO';
 
+		/**
+		 * 
+		 * Initialize the plugin and save an instance of the class
+		 * @param none
+		 * @return object $plugin_self
+		 * @since 0.3
+		 * @access public
+		 */
 		public static function plugin_start()
 		{
 			if( null === self::$plugin_self )
@@ -43,11 +72,29 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 			return self::$plugin_self;
 		} 
 		
+		/**
+		 * 
+		 * Will be called when the plugin is deactivated.
+		 * The options are removed from database
+		 * @param none
+		 * @return void
+		 * @since 0.1
+		 * @access public
+		 */
 		public function deactivation()
 		{
 			delete_option( self::OPTIONS_NAME );
 		}
 		
+		/**
+		 * 
+		 * Constructor
+		 * @@param none
+		 * @return void
+		 * @since 0.1
+		 * @access public
+		 * @return object
+		 */
 		public function __construct()
 		{
 			if( null !== self::$plugin_self )
@@ -217,12 +264,29 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 
 		}
 		
+		/**
+		 * 
+		 * Demo for settings-type 'custom'
+		 * @param mixed $arg_one
+		 * @param array $arg_two
+		 * @return void
+		 * @since 0.5
+		 * @access public static
+		 */
 		public static function custom_callback( $arg_one, array $arg_two )
 		{
 			var_dump( $arg_one );
 			var_dump( $arg_two );
 		}
 		
+		/**
+		 * 
+		 * Validate the data send by formular
+		 * @param array $input Data send by formular
+		 * @return array $input Validated data
+		 * @since 0.1
+		 * @access public static
+		 */
 		public static function validate_input( $input )
 		{
 			/*
