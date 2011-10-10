@@ -507,6 +507,28 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				esc_attr( $data );
 			else
 				$data = intval( $data );
-		}	
+		}
+
+	/* --------------- utilities --------------- */
+		/**
+		 * 
+		 * Check values of checkboxes after sending data via form
+		 * If a checkbox-value s not set, the checkbox was't selected.
+		 * In ths case the checkbox-value will be created and set to 0 (zero)
+		 * 
+		 * @param array $settings_fields Array with settings for fields (from $settings)
+		 * @param array $input Array with values send via POST
+		 * @return array $input Modified array
+		 */
+		public static function check_checkboxes( array $settings_fields, array $input ){		
+			foreach( $settings_fields as $field ){
+				if( 'checkbox' === $field['type'] ){
+					if( ! isset( $input[ $field['id'] ] ) )
+						$input[ $field['id'] ] = 0;	
+				}
+			}
+		
+			return $input;
+		}
 	} // end_class_Easy_Settings_API_Class
 }

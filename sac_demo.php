@@ -30,7 +30,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 	{
 		private static $plugin_self = null;
 		
-		public static $optionspage = null;
+		public static $options_page = null;
 		
 		const OPTIONS_NAME = 'SAC_DEMO_SETTINGS';
 		const OPTIONS_GROUP = 'SAC_DEMO';
@@ -208,8 +208,8 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 				)
 			);
 
-			// start the class
-			self::$optionpage = new Easy_Settings_API( $this->settings );
+			// create the options-page
+			self::$options_page = new Easy_Settings_API( $this->settings );
 
 			// optional way to initialize and start the class
 			// $optionpage->set_settings( $settings );
@@ -241,21 +241,9 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 			 * 
 			 */
 			
-			
-			// check every settings field if there is a checkbox
-			// if one is found, check if it was not selected (if there is no value set)
-			// set values to 0 for all unselected checkboxes
-			$settings = self::$plugin_self->settings;
+			$settings_fields = self::$plugin_self->settings['settings_fields'];
+			$input = call_user_func_array( array( self::$options_page, 'check_checkboxes' ), array( $settings_fields, $input ) );
 
-			foreach( $settings['settings_fields'] as $field ){
-				if( 'checkbox' === $field['type'] ){
-					if( ! isset( $input[ $field['id'] ] ) )
-						$input[ $field['id'] ] = 0;	
-				}
-			}
-			
-			
-				
 			return $input;
 		}
 		
