@@ -14,23 +14,33 @@
  * Domain Path: /languages
  * Description: Demo for the Settings-API Class (SAC). This plugin create a simple option page to show all available setting fields
  * Author: Ralf Albert
- * Version: 0.2.0
+ * Version: 0.5.0
  * Author URI: http://neun12.de/
  * Licence: GPL
  */
 
-if( ! class_exists( 'Easy_Settings_API_Class' ) )
+if( ! class_exists( 'Easy_Settings_API' ) )
 	require_once dirname( __FILE__ ) . '/class-easy_settings_api.php';
 
-if( ! class_exists( 'Settings_API_Class_Demo' ) && function_exists( 'add_action' ) ) 
+if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_action' ) ) 
 {
-	add_action( 'plugins_loaded', create_function( NULL, '$a = new Settings_API_Class_Demo();' ) );
+	add_action( 'plugins_loaded', array( 'Easy_Settings_API_Class_Demo', 'plugin_start' ) );
 
-	class Settings_API_Class_Demo
+	class Easy_Settings_API_Class_Demo
 	{
+		private static $plugin_self = null;
+		
 		const OPTIONS_NAME = 'SAC_DEMO_SETTINGS';
 		const OPTIONS_GROUP = 'SAC_DEMO';
 
+		public static function plugin_start()
+		{
+			if( null === self::$plugin_self )
+				self::$plugin_self = new self;
+				
+			return self::$plugin_self;
+		} 
+		
 		public function deactivation()
 		{
 			delete_option( self::OPTIONS_NAME );
@@ -38,12 +48,15 @@ if( ! class_exists( 'Settings_API_Class_Demo' ) && function_exists( 'add_action'
 		
 		public function __construct()
 		{
+			if( null !== self::$plugin_self )
+				return self::$plugin_self;
+			
 			register_deactivation_hook( __FILE__, array( &$this, 'deactivation' ) );
 			
-			$settings = array(
+			$this->settings = array(
 				'options_group'		 => self::OPTIONS_GROUP,
 				'options_name'		 => self::OPTIONS_NAME,
-				'validate_callback'	 => '', //array( __CLASS__, 'validate_input' ),   //'Settings_API_Class_Demo::validate_input',
+				'validate_callback'	 => array( __CLASS__, 'validate_input' ),   //'Settings_API_Class_Demo::validate_input',
 
 				'menu_position'		 => 'options',
 				'page_slug'			 => 'sac_demopage',
@@ -179,7 +192,7 @@ if( ! class_exists( 'Settings_API_Class_Demo' ) && function_exists( 'add_action'
 			);
 
 			// start the class
-			$optionpage = new Easy_Settings_API( $settings );
+			$optionpage = new Easy_Settings_API( $this->settings );
 
 			// optional way to initialize and start the class
 			// $optionpage->set_settings( $settings );
@@ -189,8 +202,39 @@ if( ! class_exists( 'Settings_API_Class_Demo' ) && function_exists( 'add_action'
 		
 		public static function validate_input( $input )
 		{
-			var_dump( $_POST );
-			//wp_die( var_dump( $input ) );
+//			var_dump($_POST);
+//			var_dump( $input );
+//			wp_die( var_dump( $input ) );
+
+			/*
+			 * Checkboxes send no value if they are NOT selected. This means, the array-value
+			 * for the checkbox is not set. In this case, WordPress delete the option for the checkbox
+			 * in the database.
+			 * If there is no option set in database, but a standard-value is set, the class will
+			 * take the standard-value as option for the checkbox.
+			 * In short: If there is no option-value, the standard-value will be used
+			 * 
+			 * For unselected checkboxes we have to set a value of 0|false|mettigel or something
+			 * else than 'on'.
+			 * 
+			 * If the checkbox IS selected, there will be a array-value 'on' and we do not have
+			 * to care about the rest.
+			 * 
+			 */
+			
+			
+			// check every settings field if there is a checkbox
+			// if one is found, check if it was not selected (if there is no value set)
+			// set values to 0 for all unselected checkboxes
+			foreach( $this->settings['settings_fields'] as $field ){
+				if( 'checkbox' === $field['type'] ){
+					if( ! isset( $input[ $field['id'] ] ) )
+						$input[ $field['id'] ] = 0;	
+				}
+			}
+			
+			
+				
 			return $input;
 		}
 		
