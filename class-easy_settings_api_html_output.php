@@ -3,7 +3,7 @@
  * @package WordPress
  * @subpackage Settings-API class
  * @author Ralf Albert
- * @version 0.5
+ * @version 0.5.1
  * @license GPL
  */
 
@@ -35,10 +35,25 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 {
 	class Easy_Settings_API_HTML_Output
 	{		
+		/**
+		 * 
+		 * Defaults for settings fields
+		 * @var array $settings_fields_defaults
+		 */
 		public $settings_fields_defaults = array();
 		
+		/**
+		 * 
+		 * Copy of $settings_fields_defaults. For internal use
+		 * @var object $filed_defaults
+		 */
 		private static $field_defaults;
 				
+		/**
+		 * 
+		 * Options from database
+		 * @var array $options
+		 */
 		public static $options;
 		
 		public function __construct()
@@ -114,8 +129,14 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 			if( isset( $args->callback ) ){
 				if( ! is_array( $args->callback ) )
 					return false;
-			
-				call_user_func_array( $args->callback, $args );
+
+				if( ! is_isset( $args->arguments ) )
+					$args->arguments = array();
+					
+				if( ! is_array( $args->arguments ) )
+					$args->arguments = (array) $args->arguments;
+					
+				call_user_func_array( $args->callback, $args->arguments );
 			}
 		
 		}
@@ -345,12 +366,24 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 				echo '<br /><small>' . $desc . '</small>';
 		}
 		
+		/**
+		 * 
+		 * Setter for $options
+		 * @param array $options
+		 * @return void
+		 */
 		public function set_options( $options = null )
 		{
 			if( null !== $options )
 				self::$options = $options;
 		}
 		
+		/**
+		 * 
+		 * Getter for $options
+		 * @param none
+		 * @return array $options
+		 */
 		public function get_options()
 		{
 			return self::$options;
