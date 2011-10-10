@@ -14,7 +14,7 @@
  * Domain Path: /languages
  * Description: Demo for the Settings-API Class (SAC). This plugin create a simple option page to show all available setting fields
  * Author: Ralf Albert
- * Version: 0.5.0
+ * Version: 0.5.1
  * Author URI: http://neun12.de/
  * Licence: GPL
  */
@@ -85,6 +85,21 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 						'section'	 => 'general',
 					),
 				
+					array(
+						'id'		=> 'demo_custom',
+						'title'		=> 'Custom',
+						'desc'		=> 'Custum is using a callbackfunction to display the input',
+						'type'		=> 'custom',
+						'callback'	=> array( __CLASS__, 'custom_callback' ),
+						// each single array-element is passed as single argument to the
+						// callback-function.
+						// all keys in an associatively array will be lost.
+						// if an array should passed as argument to the callback-function,
+						// it must be itself an array.
+						'arguments'	=> array( 'one' => 'eins', array( 'two' => 'zwei' ) ),
+						'section'	=> 'general'
+					),
+					
 					array(
 						'id'		 => 'demo_checkbox',
 						'title'		 => __('Checkbox'),
@@ -198,6 +213,12 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 			// $optionpage->set_settings( $settings );
 			// $optionpage->create_option_page();			
 
+		}
+		
+		public static function custom_callback( $arg_one, array $arg_two )
+		{
+			var_dump( $arg_one );
+			var_dump( $arg_two );
 		}
 		
 		public static function validate_input( $input )

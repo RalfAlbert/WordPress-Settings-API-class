@@ -3,7 +3,7 @@
  * @package WordPress
  * @subpackage Settings-API class
  * @author Ralf Albert
- * @version 0.5
+ * @version 0.5.0
  * @license GPL
  */
 
