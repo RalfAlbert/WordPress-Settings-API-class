@@ -130,7 +130,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 				if( ! is_array( $args->callback ) )
 					return false;
 
-				if( ! is_isset( $args->arguments ) )
+				if( ! isset( $args->arguments ) )
 					$args->arguments = array();
 					
 				if( ! is_array( $args->arguments ) )

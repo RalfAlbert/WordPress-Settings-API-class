@@ -30,6 +30,8 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 	{
 		private static $plugin_self = null;
 		
+		public static $optionspage = null;
+		
 		const OPTIONS_NAME = 'SAC_DEMO_SETTINGS';
 		const OPTIONS_GROUP = 'SAC_DEMO';
 
@@ -207,7 +209,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 			);
 
 			// start the class
-			$optionpage = new Easy_Settings_API( $this->settings );
+			self::$optionpage = new Easy_Settings_API( $this->settings );
 
 			// optional way to initialize and start the class
 			// $optionpage->set_settings( $settings );
@@ -223,10 +225,6 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 		
 		public static function validate_input( $input )
 		{
-//			var_dump($_POST);
-//			var_dump( $input );
-//			wp_die( var_dump( $input ) );
-
 			/*
 			 * Checkboxes send no value if they are NOT selected. This means, the array-value
 			 * for the checkbox is not set. In this case, WordPress delete the option for the checkbox
@@ -247,7 +245,9 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 			// check every settings field if there is a checkbox
 			// if one is found, check if it was not selected (if there is no value set)
 			// set values to 0 for all unselected checkboxes
-			foreach( $this->settings['settings_fields'] as $field ){
+			$settings = self::$plugin_self->settings;
+
+			foreach( $settings['settings_fields'] as $field ){
 				if( 'checkbox' === $field['type'] ){
 					if( ! isset( $input[ $field['id'] ] ) )
 						$input[ $field['id'] ] = 0;	
