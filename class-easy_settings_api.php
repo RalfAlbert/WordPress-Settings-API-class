@@ -552,7 +552,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * 
 		 * Enqueue Scripts
 		 * Enqueue registered JavaScripts
-		 * @param none (use in $_settings stored sorces)
+		 * @param none (use in $_settings stored sources)
 		 * @return void
 		 * @since 0.6
 		 * @access public static

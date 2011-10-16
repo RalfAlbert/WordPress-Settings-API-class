@@ -123,7 +123,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 				 * Entry with params: tag => array( params )
 				 * 
 				 * Params are:
-				 *  - src: full path to file
+				 *  - src: full relative path to file
 				 *  - dependencies: dependencies as array 
 				 *  - version: js version
 				 *  - in_footer: load script in footer (true) or head (false)
