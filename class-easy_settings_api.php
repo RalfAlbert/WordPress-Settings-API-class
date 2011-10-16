@@ -3,7 +3,7 @@
  * @package WordPress
  * @subpackage Settings-API class
  * @author Ralf Albert
- * @version 0.5.1
+ * @version 0.5.2
  * @license GPL
  */
 
@@ -120,6 +120,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 */
 		public function __construct( array $settings = null ) {
 			
+			// check if $settings was set. if not, just create an object of this class
 			if( null !== $settings ) {
 				$this->setup( $settings );
 				$this->init();
@@ -137,7 +138,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * @since 0.1
 		 * @access public
 		 */
-		public function setup( $settings = null) {
+		public function setup( array $settings = null) {
 			if( null === $settings )
 				return false;
 			
@@ -231,13 +232,18 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 	
 		/**
 		 * 
-		 * Return options from database
+		 * Return options from database or $this->options if already set
 		 * @param string $options_name
 		 * @return array $options
 		 * @since 0.4
 		 * @access protected
 		 */
-		protected function get_options( $options_name ){
+		protected function get_options( $options_name = '' ){
+			// we can't get options from database if we do not know which option to retrive
+			// but if $this->options is already set, return this options
+			if( '' == $options_name && empty( $this->options ) )
+				return false;
+				
 			if( empty( $this->options ) )
 				$this->options = get_option( $options_name );
 				
@@ -304,12 +310,20 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		/**
 		 * 
 		 * Setter for $settings
+		 * Set $_settings if $settings is given and $defaults not
+		 * Sanitize $settings
+		 * Merge $settings and $defaults if both are given
+		 * 
 		 * @param array $settings
 		 * @return array $_settings
 		 * @since 0.3
 		 * @access public
 		 */
-		public function set_settings( array $settings, $defaults = array() ){
+		public function set_settings( array $settings = null, $defaults = array() ){
+			// no settings, no action
+			if( null === $settings )
+				return false;
+				
 			// Sanitize the users data!
 			// There is only one thing that makes you sleep well:
 			// Better than security is more security
@@ -374,7 +388,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * @since 0.1
 		 * @access public
 		 */
-		public function create_setting( $args = array() ) {
+		public function create_setting( array $args = array() ) {
 			if( null === $this->output )
 				$this->output = $this->get_output();
 					
@@ -436,7 +450,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * @since 0.1
 		 * @access public
 		 */
-		public function display_settings_field( array $args ) {
+		public function display_settings_field( array $args = array() ) {
 			// get outpot-object
 			if( null === $this->output )
 				$this->output = $this->get_output();
@@ -457,7 +471,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			
 			// set standard for multi checkbox
 			if( ( isset( $std ) && is_array( $std ) ) && 
-				( $type == 'mcheckbox' || $type == 'mselect') &&
+				( isset( $type) && ( 'mcheckbox' == $type || 'mselect' == $type) ) &&
 				! isset( $this->options[$id] ) ) {
 	
 				 	foreach( $std as $key ) {
@@ -492,7 +506,34 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			}
 			
 		}
-	
+
+		public function enqueue_js( array $src = null ){
+			// no $src, no action
+			if( empty( $src ) )
+				return false;
+
+			// just set $js_src, optionspage wasn't added yet. e.g. for external calls
+			if( empty( $this->_settings['admin_page'] ) ){
+				$this->_settings['js_src'] = $src;	
+				return sizeof( $this->_settings['js_src'] );
+			}
+			
+			//optionspage was already added. set js_src if it isn't set yet
+			if( empty( $this->_settings['js_src'] ) )
+				$this->_settings['js_src'] = $src;
+			
+			$name = $this->_settings('page_slug');
+			
+			foreach( $this->_settings['js_src'] as $key => $val ){
+				if( ! is_string($key) )
+					$key = $name.$key;
+//TODO: pruefen ob $src eine datei und lesbar ist					
+				add_action( 'load-'.$name, $src );
+			}
+			
+			return true;
+		} 
+		
 	/* --------------- sanitizing --------------- */ 
 		/**
 		 *
