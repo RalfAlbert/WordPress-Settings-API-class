@@ -3,7 +3,7 @@
  * @package WordPress
  * @subpackage Settings-API class
  * @author Ralf Albert
- * @version 0.5.2
+ * @version 0.6.0
  * @license GPL
  */
 
@@ -76,7 +76,9 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * All settings
 		 * @var array
 		 */
-		protected $_settings = array();
+		protected static $_settings = array();
+		
+		protected static $static_settings = array();
 		
 		/**
 		 *
@@ -196,8 +198,8 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				'users', 'options', 'management', 'menu'
 			);
 	
-			if ( ! in_array( $this->_settings['menu_position'], $whitelist_where ) )
-				$this->_settings['menu_position'] = 'options';
+			if ( ! in_array( self::$_settings['menu_position'], $whitelist_where ) )
+				self::$_settings['menu_position'] = 'options';
 				
 			// extract vars from $_settings
 			// copy needed vars from array $_settings to the class-vars
@@ -208,11 +210,13 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 					'sections', 'section_desc', 'settings_fields',
 			);
 			
-			foreach( $this->_settings as $key => &$value ){
+			foreach( self::$_settings as $key => &$value ){
 				if( in_array( $key, $whitelist_vars ) )
 					$this->$key = $value;
 			}
 	
+			self::$static_settings = self::$_settings;
+			
 			return true;
 		}
 		
@@ -304,7 +308,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * @access public
 		 */
 		public function get_settings() {
-			return $this->_settings;
+			return self::$_settings;
 		}
 	
 		/**
@@ -331,11 +335,11 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 	
 			// if defaults are set, merging them with settings
 			if( ! empty( $defaults ) )
-				$this->_settings = wp_parse_args( $settings, $defaults );
+				self::$_settings = wp_parse_args( $settings, $defaults );
 			else				
-				$this->_settings = $settings;
+				self::$_settings = $settings;
 				
-			return $this->_settings;
+			return self::$_settings;
 			
 		}
 		
@@ -350,7 +354,13 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 */
 		public function add_page() {
 			$where = 'add_' . $this->menu_position . '_page';
-			$this->_settings['admin_page'] = $where( $this->page_title, $this->menu_title, $this->capability, $this->page_slug, array( &$this, 'display_page' ) );
+			self::$_settings['admin_page'] = $where( $this->page_title, $this->menu_title, $this->capability, $this->page_slug, array( &$this, 'display_page' ) );
+			
+			// register javascript(s) if set
+			if( ! empty( self::$_settings['js_scripts'] ) && is_array( self::$_settings['js_scripts'] ) ){
+				self::register_js( self::$_settings['js_scripts'] );
+			}
+				
 		}
 	
 		/**
@@ -507,32 +517,83 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			
 		}
 
-		public function enqueue_js( array $src = null ){
-			// no $src, no action
-			if( empty( $src ) )
+		/**
+		 * 
+		 * Register JavaScript(s) for the optionspage
+		 * If this method is called before the optionspage was added, than the javascripts only will be registered
+		 * If the JavaScripts are already registered, than they will be enqueued
+		 * @param array $scripts Array with (string) tag, (string) source, (array) dependencies, (string) version, (bool) in_footer
+		 * @return bool true|false|number of registered scripts
+		 * @since 0.6
+		 * @access public static
+		 */
+		public static function register_js( array $scripts = null ){
+			// no $scripts, no action
+			if( empty( $scripts ) )
 				return false;
 
-			// just set $js_src, optionspage wasn't added yet. e.g. for external calls
-			if( empty( $this->_settings['admin_page'] ) ){
-				$this->_settings['js_src'] = $src;	
-				return sizeof( $this->_settings['js_src'] );
+			// just set js_scripts, optionspage wasn't added yet. e.g. for external calls
+			if( empty( self::$_settings['admin_page'] ) ){
+				self::$_settings['js_scripts'] = $scripts;	
+				return sizeof( self::$_settings['js_scripts'] );
 			}
 			
-			//optionspage was already added. set js_src if it isn't set yet
-			if( empty( $this->_settings['js_src'] ) )
-				$this->_settings['js_src'] = $src;
+			//optionspage was already added. set js_scripts if it isn't set yet
+			if( empty( self::$_settings['js_scripts'] ) )
+				self::$_settings['js_scripts'] = $scripts;
 			
-			$name = $this->_settings('page_slug');
-			
-			foreach( $this->_settings['js_src'] as $key => $val ){
-				if( ! is_string($key) )
-					$key = $name.$key;
-//TODO: pruefen ob $src eine datei und lesbar ist					
-				add_action( 'load-'.$name, $src );
-			}
+			// optionspage was added, js_src was set, add actionhook
+			add_action( 'load-' . self::$_settings['admin_page'], array( __CLASS__, 'enqueue_scripts' ) );
 			
 			return true;
-		} 
+		}
+
+		/**
+		 * 
+		 * Enqueue Scripts
+		 * Enqueue registered JavaScripts
+		 * @param none (use in $_settings stored sorces)
+		 * @return void
+		 * @since 0.6
+		 * @access public static
+		 */
+		public static function enqueue_scripts(){
+			// no scripts, no action
+			if( empty( self::$_settings['js_scripts'] ) || empty( self::$_settings['page_slug'] ))
+				return false;
+				
+			// use the page_slug as part of the tag if no tag was set
+			$name = self::$_settings['page_slug'];
+
+			foreach( self::$_settings['js_scripts'] as $tag => $values ){
+				// no tag was set
+				if( ! is_string( $tag ) )
+					$tag = $name . '-' . $tag;
+					
+				// the simplest way, $values is just a string. make $values an array
+				if( ! is_array( $values ) ){
+					$values = array( 'src' => $values );
+
+				}
+				
+				$defaults = array(	'src' 			=> false,
+									'dependencies' 	=> array(),
+									'version'		=> false,
+									'in_footer'		=> true
+							);
+				$values = wp_parse_args( $values, $defaults );
+				
+				if( ! is_array( $values['dependencies'] ) )
+					$values['dependencies'] = (array) $values['dependencies'];
+				
+				// maybe no source was set. but don't care about if $src exists or is readable!!!
+				if( ! $values['src'] )
+					continue;
+					
+				wp_enqueue_script( $tag, $values['src'], $values['dependencies'], $values['version'], $values['in_footer'] );
+			}
+			
+		}
 		
 	/* --------------- sanitizing --------------- */ 
 		/**

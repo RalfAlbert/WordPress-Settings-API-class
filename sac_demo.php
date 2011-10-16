@@ -115,16 +115,53 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 				'capability'		 => 'manage_options',
 				'icon'				 => 'icon-options-general',
 
+				/*
+				 * Enqueue JavaScript
+				 * 
+				 * Simple entry: tag => source (script will be enqueued with no dependencies, in head)
+				 * 
+				 * Entry with params: tag => array( params )
+				 * 
+				 * Params are:
+				 *  - src: full path to file
+				 *  - dependencies: dependencies as array 
+				 *  - version: js version
+				 *  - in_footer: load script in footer (true) or head (false)
+				 */	
+				'js_scripts' => array(
+										'sac-demo2-js' => plugins_url( 'js/alert.js', __FILE__ ),
+										
+										'sac-demo-js' => array( 
+														'src' 			=> plugins_url('/js/demo_js.js', __FILE__ ),
+														'dependencies' 	=> array( 'jquery' ),
+														'version'		=> false,
+														'in_footer'		=> true
+													),
+													
+									// some other javascripts
+							),
+			
+				/*
+				 * Sections
+				 */
 				'sections'			 => array(
 					'general'	 => __('General Settings'),
 					'multi' 	 => __('Multiple Choice')
 				),
 
+				/*
+				 * Section descriptions
+				 */
 				'section_desc'		 => array(
 					'general'	 => __('Description for general settings (optional).'),
 					'multi'		 => __('More than one choice are available.'),
 				),
 
+				/*
+				 * Settings fields
+				 * 
+				 * Each field can define some params. Minimum are 'id', 'type' and 'title'
+				 */
 				'settings_fields'	 => array(
 					array(
 						'id'		 => 'demo_heading',
@@ -142,7 +179,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 						'callback'	=> array( __CLASS__, 'custom_callback' ),
 						// each single array-element is passed as single argument to the
 						// callback-function.
-						// all keys in an associatively array will be lost.
+						// all keys in an associativ array will be lost.
 						// if an array should passed as argument to the callback-function,
 						// it must be itself an array.
 						'arguments'	=> array( 'one' => 'eins', array( 'two' => 'zwei' ) ),
@@ -252,7 +289,8 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 						'section'	 => 'multi',
 					),
 
-				)
+				), // end_settings-fields
+				
 			);
 
 			// create the options-page
