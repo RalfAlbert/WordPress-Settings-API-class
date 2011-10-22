@@ -3,7 +3,7 @@
  * @package WordPress
  * @subpackage Easy Settings API Class
  * @author Ralf Albert
- * @version 0.3.1
+ * @version 0.6.2
  *
  */
 
@@ -14,7 +14,7 @@
  * Domain Path: /languages
  * Description: Demo for the the Easy Settings-API Class (ESAC). This plugin create a simple option page to show all available setting fields
  * Author: Ralf Albert
- * Version: 0.6.1
+ * Version: 0.6.2
  * Author URI: http://neun12.de/
  * Licence: GPL
  */
@@ -128,7 +128,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 				 *  - version: js version
 				 *  - in_footer: load script in footer (true) or head (false)
 				 */	
-
+/*
 				'js_scripts' => array(
 										'sac-demo2-js' => plugins_url( 'js/alert.js', __FILE__ ),
 										
@@ -141,7 +141,20 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 													
 									// some other javascripts
 							),
-			
+*/			
+				/*
+				 * Enqueue stylesheets
+				 *
+				 * tag => source
+				 * or simply the path to the stylesheet. than the page_slug will be use as tag
+				 * 
+				 */	
+/*
+				'styles' => array(	'first-demo-style' => plugins_url( 'css/demostyle.css', __FILE__ ),
+									'second-demo-style' => plugins_url( 'css/demostyle.css', __FILE__ ),
+									plugins_url( 'css/demostyle.css', __FILE__ ),
+							),
+*/							
 				/*
 				 * Sections
 				 */

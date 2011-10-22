@@ -3,7 +3,7 @@
  * @package WordPress
  * @subpackage Settings-API class
  * @author Ralf Albert
- * @version 0.6.1
+ * @version 0.6.2
  * @license GPL
  */
 
@@ -77,8 +77,6 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * @var array
 		 */
 		protected static $_settings = array();
-		
-		protected static $static_settings = array();
 		
 		/**
 		 *
@@ -227,8 +225,6 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 					$this->$key = $value;
 			}
 	
-			self::$static_settings = self::$_settings;
-			
 			return true;
 		}
 		
@@ -242,10 +238,12 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * @access public
 		 */
 		public function init(){
+			// show errors
 			add_action( 'admin_notices', array( &$this, 'show_errors' ) );
 			
+			// add page to admin-menu and register settings
 			add_action( 'admin_menu', array( &$this, 'add_page' ) );
-			add_action( 'admin_init', array( &$this, 'register_settings' ) );
+			add_action( 'admin_init', array( &$this, 'register_settings' ) );			
 		}
 	
 		/**
@@ -337,6 +335,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			return $this->options;
 		}
 		
+		
 		/**
 		 * 
 		 * Returns the html-output-object
@@ -352,6 +351,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				
 			return $this->output;
 		}
+		
 			
 		/**
 		 * 
@@ -382,6 +382,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				return $this->output;		
 		}
 		
+		
 		/**
 		 *
 		 * Getter for settings
@@ -393,6 +394,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		public function get_settings() {
 			return self::$_settings;
 		}
+		
 	
 		/**
 		 * 
@@ -444,6 +446,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			
 		}
 		
+		
 		/**
 		 *
 		 * Add the page to the admin menu. Store page-hook in $_settings.
@@ -461,8 +464,12 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			if( ! empty( self::$_settings['js_scripts'] ) && is_array( self::$_settings['js_scripts'] ) ){
 				self::register_js( self::$_settings['js_scripts'] );
 			}
-				
+			
+			// hook up custom stylesheets
+			if( ! empty( self::$_settings['styles'] ) )
+				add_action( 'admin_print_styles-' . self::$_settings['admin_page'], array( &$this, 'enqueue_styles' ) );
 		}
+		
 	
 		/**
 		 *
@@ -488,6 +495,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			
 			unset( $slug, $title, $field );
 		}
+		
 	
 		/**
 		 *
@@ -514,6 +522,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			unset( $args, $defaults );
 		}
 		
+		
 		/**
 		 *
 		 * Display the page
@@ -537,6 +546,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			
 			$this->output->display_page( $args );
 		}
+		
 	
 		/**
 		 *
@@ -550,6 +560,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			if ( key_exists( $section['id'], $this->section_descs ) )
 				echo $this->section_descs[$section['id']];
 		}
+		
 		
 		/**
 		 *
@@ -617,6 +628,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			}
 			
 		}
+		
 
 		/**
 		 * 
@@ -645,7 +657,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			
 			// optionspage was added, js_src was set, add actionhook
 			add_action( 'load-' . self::$_settings['admin_page'], array( __CLASS__, 'enqueue_scripts' ) );
-			
+
 			return true;
 		}
 
@@ -664,12 +676,12 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				return false;
 				
 			// use the page_slug as part of the tag if no tag was set
-			$name = self::$_settings['page_slug'];
+			$slug = self::$_settings['page_slug'];
 
 			foreach( self::$_settings['js_scripts'] as $tag => $values ){
 				// no tag was set
 				if( ! is_string( $tag ) )
-					$tag = $name . '-' . $tag;
+					$tag = $slug.'_'.$tag;
 					
 				// the simplest way, $values is just a string. make $values an array
 				if( ! is_array( $values ) ){
@@ -694,6 +706,36 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				wp_enqueue_script( $tag, $values['src'], $values['dependencies'], $values['version'], $values['in_footer'] );
 			}
 			
+		}
+		
+		/**
+		 * 
+		 * Enqueue stylesheets
+		 * Enqueue stylesheets, hooked by admin_print_styles-
+		 * @param none
+		 * @return void
+		 * @since 0.6.2
+		 * @access public
+		 */
+		public function enqueue_styles(){
+			if( ! empty( self::$_settings['styles'] ) ){
+				$styles = self::$_settings['styles'];
+				$slug 	= self::$_settings['page_slug'];
+				$count = 0;
+				
+				// first check if $styles is an array. if not, use the page_slug as tag
+				if( ! is_array( $styles ) )
+					$styles = array( $slug => $styles );
+					
+				foreach( $styles as $tag => $source ){
+					// if no tag is set, use page_slug+index as tag
+					if( ! is_string( $tag ) )
+						$tag = $slug.'_'.$tag;
+
+					wp_enqueue_style( $tag, $source, false, false, 'all' );
+				}
+				
+			}
 		}
 		
 	/* --------------- sanitizing --------------- */ 
