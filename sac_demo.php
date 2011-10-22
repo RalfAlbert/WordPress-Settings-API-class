@@ -1,20 +1,20 @@
 <?php
 /**
  * @package WordPress
- * @subpackage Settings API Class
+ * @subpackage Easy Settings API Class
  * @author Ralf Albert
- * @version 0.3.0
+ * @version 0.3.1
  *
  */
 
 /**
- * Plugin Name: Settings-API Class (Demo)
+ * Plugin Name: Easy Settings-API Class (Demo)
  * Plugin URI: http://yoda.neun12.de/
- * Text Domain: SAC_DEMO
+ * Text Domain: ESAC_DEMO
  * Domain Path: /languages
- * Description: Demo for the Settings-API Class (SAC). This plugin create a simple option page to show all available setting fields
+ * Description: Demo for the the Easy Settings-API Class (ESAC). This plugin create a simple option page to show all available setting fields
  * Author: Ralf Albert
- * Version: 0.6.0
+ * Version: 0.6.1
  * Author URI: http://neun12.de/
  * Licence: GPL
  */

@@ -3,7 +3,7 @@
  * @package WordPress
  * @subpackage Settings-API class
  * @author Ralf Albert
- * @version 0.6.0
+ * @version 0.6.1
  * @license GPL
  */
 
@@ -29,17 +29,6 @@
  Requirements:
  ==============================================================================
  This plugin requires WordPress >= 3.0 and tested with PHP Interpreter >= 5.2.9
- */
-
-//TODO: a lot
-/*
- * - options-name und options-group optional machen
- * 	wenn options-name/group nicht angegeben ist, den pluginnamen auslesen und name/group anhängen
- * 
- * - capability optional machen (default: manage_options)
- * - page_slug / page_title optional machen. default: Pluginname + _optionspage (page_slug)/ __('Optionspage')
- * 
- * 
  */
 
 /*
@@ -121,7 +110,18 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 */
 		protected $settings_fields = array();
 		
+		/**
+		 * 
+		 * Path to file wich include this class
+		 * @var string
+		 */
 		public $parent = '';
+		
+		/**
+		 * 
+		 * Errors
+		 * @var string
+		 */
 		private $errors = '';
 			
 		/**
@@ -144,14 +144,32 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 	
 		}
 	
+		/**
+		 * 
+		 * Adding an error message to the internal error-handling
+		 * @param string $msg
+		 * @return void
+		 * @since 0.6.1
+		 * @access protected
+		 */
 		protected function add_error( $msg = '' ){
 			$this->errors .= '<p>' . $msg . '</p>';	
 		}
 		
+		/**
+		 * 
+		 * Show errors as admin notice
+		 * Hooked in via 'admin_notices'
+		 * @param none
+		 * @return void
+		 * @since 0.6.1
+		 * @access public
+		 */
 		public function show_errors(){
 			if( '' != $this->errors ){
 				echo "<div class='error'>{$this->errors}</div>";
 				
+				// remove actions to avoid displaying a broken options-page
 				remove_action( 'admin_menu', array( &$this, 'add_page' ) );
 				remove_action( 'admin_init', array( &$this, 'register_settings' ) );		
 			}
@@ -196,7 +214,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				self::$_settings['menu_position'] = 'options';
 				
 			// extract vars from $_settings
-			// copy needed vars from array $_settings to the class-vars
+			// copy needed vars from array $_settings to class-vars
 			$whitelist_vars = array(
 					'options_group', 'options_name', 'validate_callback',
 					'menu_position', 'page_slug', 'page_title', 'menu_title',
@@ -278,7 +296,9 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			 */
 			if( '' != $this->parent && is_admin() ){
 				// must be included for function get_plugin_data
-				require_once ABSPATH.'wp-admin/includes/plugin.php';
+				if( ! function_exists( 'get_plugin_data' ) )
+					require_once ABSPATH.'wp-admin/includes/plugin.php';
+				
 				$data = get_plugin_data( $this->parent );
 					
 				$name = isset( $data['Name'] ) ? $data['Name'] : 'Default Plugin';
@@ -287,8 +307,8 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				$slug = strtolower( esc_attr( str_replace( ' ', '_', $name ) ) );
 				
 				$defaults['page_slug'] 		= $slug;
-				$defaults['options_group']	= $slug;
-				$defaults['options_name']	= $slug;
+				$defaults['options_group']	= $slug . '_options_group';
+				$defaults['options_name']	= $slug . '_options';
 				$defaults['page_title'] 	= $name;
 				$defaults['menu_title'] 	= $name;
 				$defaults['description'] 	= $desc;
