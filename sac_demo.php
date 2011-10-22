@@ -14,7 +14,7 @@
  * Domain Path: /languages
  * Description: Demo for the Settings-API Class (SAC). This plugin create a simple option page to show all available setting fields
  * Author: Ralf Albert
- * Version: 0.5.1
+ * Version: 0.6.0
  * Author URI: http://neun12.de/
  * Licence: GPL
  */
