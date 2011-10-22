@@ -31,6 +31,17 @@
  This plugin requires WordPress >= 3.0 and tested with PHP Interpreter >= 5.2.9
  */
 
+//TODO: a lot
+/*
+ * - options-name und options-group optional machen
+ * 	wenn options-name/group nicht angegeben ist, den pluginnamen auslesen und name/group anhängen
+ * 
+ * - capability optional machen (default: manage_options)
+ * - page_slug / page_title optional machen. default: Pluginname + _optionspage (page_slug)/ __('Optionspage')
+ * 
+ * 
+ */
+
 /*
  * Credits go to:
  * - Alison Barret[1]
