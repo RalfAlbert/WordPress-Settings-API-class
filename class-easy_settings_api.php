@@ -121,6 +121,8 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 */
 		protected $settings_fields = array();
 		
+		public $parent = '';
+		private $errors = '';
 			
 		/**
 		 *
@@ -131,7 +133,8 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * @since 0.1
 		 * @access public
 		 */
-		public function __construct( array $settings = null ) {
+		public function __construct( array $settings = null, $parent = '' ) {
+			$this->parent = $parent;
 			
 			// check if $settings was set. if not, just create an object of this class
 			if( null !== $settings ) {
@@ -141,6 +144,19 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 	
 		}
 	
+		protected function add_error( $msg = '' ){
+			$this->errors .= '<p>' . $msg . '</p>';	
+		}
+		
+		public function show_errors(){
+			if( '' != $this->errors ){
+				echo "<div class='error'>{$this->errors}</div>";
+				
+				remove_action( 'admin_menu', array( &$this, 'add_page' ) );
+				remove_action( 'admin_init', array( &$this, 'register_settings' ) );		
+			}
+		}
+		
 		/**
 		 *
 		 * Setup the class-vars
@@ -155,44 +171,9 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			if( null === $settings )
 				return false;
 			
-			$defaults = array(
-				'menu_position'		 => 'options',
-				'page_slug'			 => 'custom_page',
-				'options_group'		 => 'custom_options_group',
-				'options_name'		 => 'custom-options',
-				'validate_callback'	 => '',
-				'page_title'		 => 'Custom Optionpage',
-				'menu_title'		 => 'Custom Optionpage',
-				'capability'		 => 'manage_options',
-				'description'		 => '',
-	
-				'sections'			 => array(
-					'custom' => __('Custom Section')
-				),
-	
-				'section_desc'		 => array(
-					'custom' => __('Description for the custom section.')
-				),
-	
-				'settings_fields'	 => array(
-					// first field
-					array(
-						'id'		 => 'sample_text',
-						'title'		 => __('Sample Text'),
-						'desc'		 => __('This is a sample description.'),
-						'text_after' => '',
-						'std'		 => 'sample text',
-						'size'		 => 30,
-						'type'		 => 'text',
-						'section'	 => 'custom'
-					),
+			// create defaults
+			$defaults = $this->get_defaults();
 					
-					// second field
-					// array (...),
-					// third field ... and so on
-				)
-			);
-		
 			// get html-output-class
 			$this->set_output();
 			
@@ -209,6 +190,8 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				'users', 'options', 'management', 'menu'
 			);
 	
+			self::$_settings['menu_position'] = strtolower( self::$_settings['menu_position'] );
+			
 			if ( ! in_array( self::$_settings['menu_position'], $whitelist_where ) )
 				self::$_settings['menu_position'] = 'options';
 				
@@ -240,11 +223,80 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * @since 0.1
 		 * @access public
 		 */
-		public function init() {
+		public function init(){
+			add_action( 'admin_notices', array( &$this, 'show_errors' ) );
+			
 			add_action( 'admin_menu', array( &$this, 'add_page' ) );
 			add_action( 'admin_init', array( &$this, 'register_settings' ) );
 		}
 	
+		/**
+		 * 
+		 * Create the array with default values
+		 * Try to read the plugin-header and copy all available data from the
+		 * plugin-header to the defaults array.
+		 * @param none
+		 * @return array $defaults
+		 * @uses get_plugin_data()
+		 * @since 0.6.1
+		 * @access protected
+		 */
+		protected function get_defaults(){
+ 			$defaults = array(
+				'menu_position'		 => 'options',
+				'page_slug'			 => '',
+				'options_group'		 => '',
+				'options_name'		 => '',
+				'validate_callback'	 => '',
+				'page_title'		 => '',
+				'menu_title'		 => '',
+				'capability'		 => 'manage_options',
+				'description'		 => '',
+ 				'icon'				 => 'icon-options-general',
+	
+				'sections'			 => array(
+					'default' => __('Default Section')
+				),
+	
+				'section_desc'		 => array(
+					'default' => __('Description for the default section.')
+				),
+	
+				'settings_fields'	 => array(
+					array(
+						'id'		 => 'default_heading',
+						'title'		 => __('Default heading'),
+						'desc'		 => __('This heading is displayed when the default values are used.'),
+						'type'		 => 'heading',
+						'section'	 => 'default'
+					),
+				)
+			);
+			
+			/*
+			 * fetch plugin-header and copy data from plugin-header to defaults array
+			 */
+			if( '' != $this->parent && is_admin() ){
+				// must be included for function get_plugin_data
+				require_once ABSPATH.'wp-admin/includes/plugin.php';
+				$data = get_plugin_data( $this->parent );
+					
+				$name = isset( $data['Name'] ) ? $data['Name'] : 'Default Plugin';
+				$desc = isset( $data['Description'] ) ? $data['Description'] : 'Default description';
+					
+				$slug = strtolower( esc_attr( str_replace( ' ', '_', $name ) ) );
+				
+				$defaults['page_slug'] 		= $slug;
+				$defaults['options_group']	= $slug;
+				$defaults['options_name']	= $slug;
+				$defaults['page_title'] 	= $name;
+				$defaults['menu_title'] 	= $name;
+				$defaults['description'] 	= $desc;
+			}
+			
+			return $defaults;			
+		}
+				
 		/**
 		 * 
 		 * Return options from database or $this->options if already set
@@ -343,13 +395,31 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			// There is only one thing that makes you sleep well:
 			// Better than security is more security
 			array_walk_recursive( $settings, array( &$this, 'sanitize_settings' ) );
-	
+				
 			// if defaults are set, merging them with settings
 			if( ! empty( $defaults ) )
 				self::$_settings = wp_parse_args( $settings, $defaults );
 			else				
 				self::$_settings = $settings;
+
+			// check for empty values
+			$not_empty = array( 'page_slug', 'options_group', 'options_name', 'menu_title', 'page_title' );
+			$val_error = array();
+			
+			foreach( $not_empty as $key ){
+				if( empty( self::$_settings[$key] ) )
+					array_push( $val_error, $key );
+			}
+			if( ! empty( $val_error ) && is_admin() ){
+				$msg = '<h4>Error in class <b>Easy Settings-API</b></h4><br />The following value(s) have to be set in configuration array:';
+				$msg .= '<ol>';
+				foreach( $val_error as $e )
+					$msg .= "<li>{$e}</li>";
+				$msg .= '</ol>';
 				
+				$this->add_error( $msg );
+			}
+			
 			return self::$_settings;
 			
 		}

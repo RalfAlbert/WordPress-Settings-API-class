@@ -128,6 +128,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 				 *  - version: js version
 				 *  - in_footer: load script in footer (true) or head (false)
 				 */	
+
 				'js_scripts' => array(
 										'sac-demo2-js' => plugins_url( 'js/alert.js', __FILE__ ),
 										
@@ -294,7 +295,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 			);
 
 			// create the options-page
-			self::$options_page = new Easy_Settings_API( $this->settings );
+			self::$options_page = new Easy_Settings_API( $this->settings, __FILE__); // 
 
 			// optional way to initialize and start the class
 			// $optionpage->set_settings( $settings );
