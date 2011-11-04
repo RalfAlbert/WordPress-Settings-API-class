@@ -191,7 +191,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 			if( isset( $args->size ) && 1 < $args->size )
 				$lines = ' size="' . $args->size . '"';
 	
-			echo '<select' . $args->class . ' name="' . $args->options_name . '[' . $args->id . ']"' . $lines . ' style="height:100%">';
+			echo '<select id="'. $args->id . '" ' . $args->class . ' name="' . $args->options_name . '[' . $args->id . ']"' . $lines . ' style="height:100%">';
 	
 			foreach( $args->choices as $value => $label ) {
 				$selected = '';
@@ -279,7 +279,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 			if( isset( $args->size ) && 1 < $args->size )
 				$lines = ' size="' . $args->size . '"';
 	
-			echo '<select' . $args->class . ' name="' . $args->options_name . '[]"' . $lines . ' multiple="multiple" style="height:100%">';
+			echo '<select id="'. $args->id . '" ' . $args->class . ' name="' . $args->options_name . '[]"' . $lines . ' multiple="multiple" style="height:100%">';
 	
 			foreach( $args->choices as $key => $label ) {
 				$selected = '';
