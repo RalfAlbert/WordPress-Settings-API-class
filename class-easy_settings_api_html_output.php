@@ -305,7 +305,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 			
 			$value = isset( self::$options[$args->id] ) ? self::$options[$args->id] : $args->std;
 			
-			echo '<textarea' . $args->class . ' id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']" rows="' . $args->rows . '" cols="' . $args->cols . '" placeholder="' . $args->std . '">' . esc_textarea( $value ) . '</textarea>';
+			echo '<textarea' . $args->class . ' id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']" rows="' . $args->rows . '" cols="' . $args->cols . '" placeholder="' . $args->std . '">' . esc_textarea( $value ) . '</textarea>' . $args->text_after;
 
 			self::display_field_description( $args->desc );		
 		}
