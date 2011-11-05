@@ -102,217 +102,237 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 			
 			register_deactivation_hook( __FILE__, array( &$this, 'deactivation' ) );
 			
-			$this->settings = array(
-				'options_group'		 => self::OPTIONS_GROUP,
-				'options_name'		 => self::OPTIONS_NAME,
-				'validate_callback'	 => array( __CLASS__, 'validate_input' ),   //'Settings_API_Class_Demo::validate_input',
+			$optionspage = new Easy_Settings_API();
+			
+			$base_config = new stdClass();
+			$base_config->options_group 	= self::OPTIONS_GROUP;
+			$base_config->options_name		= self::OPTIONS_NAME;
+			$base_config->validate_callback	= array( __CLASS__, 'validate_input' );   //'Settings_API_Class_Demo::validate_input',
 
-				'menu_position'		 => 'options',
-				'page_slug'			 => 'sac_demopage',
-				'page_title'		 => 'Settings API Class Demo Page',
-				'menu_title'		 => 'SAC Demopage',
-				'description'		 => 'This is a demo page for the Settings API Class.',
-				'capability'		 => 'manage_options',
-				'icon'				 => 'icon-options-general',
+			$base_config->menu_position		= 'options';
+			$base_config->page_slug			= 'sac_demopage';
+			$base_config->page_title		= 'Settings API Class Demo Page';
+			$base_config->menu_title		= 'SAC Demopage';
+			$base_config->description		= 'This is a demo page for the Settings API Class.';
+			$base_config->capability		= 'manage_options';
+			$base_config->icon				= 'icon-options-general';
+			
+$optionspage->basic_config( $base_config, __FILE__ );
 
-				/*
-				 * Enqueue JavaScript
-				 * 
-				 * Simple entry: tag => source (script will be enqueued with no dependencies, in head)
-				 * 
-				 * Entry with params: tag => array( params )
-				 * 
-				 * Params are:
-				 *  - src: full relative path to file
-				 *  - dependencies: dependencies as array 
-				 *  - version: js version
-				 *  - in_footer: load script in footer (true) or head (false)
-				 */	
-/*
-				'js_scripts' => array(
-										'sac-demo2-js' => plugins_url( 'js/alert.js', __FILE__ ),
-										
-										'sac-demo-js' => array( 
-														'src' 			=> plugins_url('/js/demo_js.js', __FILE__ ),
-														'dependencies' 	=> array( 'jquery' ),
-														'version'		=> false,
-														'in_footer'		=> true
-													),
-													
-									// some other javascripts
-							),
-*/			
-				/*
-				 * Enqueue stylesheets
-				 *
-				 * tag => source
-				 * or simply the path to the stylesheet. than the page_slug will be use as tag
-				 * 
-				 */	
-/*
-				'styles' => array(	'first-demo-style' => plugins_url( 'css/demostyle.css', __FILE__ ),
-									'second-demo-style' => plugins_url( 'css/demostyle.css', __FILE__ ),
-									plugins_url( 'css/demostyle.css', __FILE__ ),
-							),
-*/							
-				/*
-				 * Sections
-				 */
-				'sections'			 => array(
-					'general'	 => __('General Settings'),
-					'multi' 	 => __('Multiple Choice')
-				),
+			
+			/*
+			 * JavaScript
+			 * 
+			 * tag = source 		:: simplest way (script will be enqueued with no dependencies, in head)
+			 * 
+			 * tag->src 			= string 	:: full relative path to file
+			 * tag->dependencies	= array()	:: dependencies as array 
+			 * tag->version			= string	:: js version
+			 * tag->in_footer		= bool		:: load script in footer (true) or head (false)
+			 */	
 
-				/*
-				 * Section descriptions
-				 */
-				'section_desc'		 => array(
-					'general'	 => __('Description for general settings (optional).'),
-					'multi'		 => __('More than one choice are available.'),
-				),
+			$scripts = new stdClass();
+			$scripts->sac_demo_js = plugins_url( 'js/demo_js.js', __FILE__ );
+			
+			$scripts->sac_demo1_js->src = plugins_url( 'js/alert.js', __FILE__ );
+			
+			$scripts->sac_demo2_js->src				= plugins_url('/js/demo_js.js', __FILE__ );
+			$scripts->sac_demo2_js->dependencies	= array( 'jquery' );
+			$scripts->sac_demo2_js->version			= false;
+			$scripts->sac_demo2_js->in_footer		= true;
 
-				/*
-				 * Settings fields
-				 * 
-				 * Each field can define some params. Minimum are 'id', 'type' and 'title'
-				 */
-				'settings_fields'	 => array(
-					array(
-						'id'		 => 'demo_heading',
-						'title'		 => 'Heading',
-						'desc'		 => __('Headings only use the title and description as parameter.'),
-						'type'		 => 'heading',
-						'section'	 => 'general',
-					),
-				
-					array(
-						'id'		=> 'demo_custom',
-						'title'		=> 'Custom',
-						'desc'		=> 'Custum is using a callbackfunction to display the input',
-						'type'		=> 'custom',
-						'callback'	=> array( __CLASS__, 'custom_callback' ),
-						// each single array-element is passed as single argument to the
-						// callback-function.
-						// all keys in an associativ array will be lost.
-						// if an array should passed as argument to the callback-function,
-						// it must be itself an array.
-						'arguments'	=> array( 'one' => 'eins', array( 'two' => 'zwei' ) ),
-						'section'	=> 'general'
-					),
+
+$optionspage->add_script( $scripts );
+
+
+			/*
+			 * Stylesheets
+			 *
+			 * tag->src = source
+			 * tag->deps = dependencies
+			 */	
+
+			$styles = new stdClass();
+			$styles->first_demo_style->src			= plugins_url( 'css/demostyle.css', __FILE__ );
+			$styles->first_demo_style->deps = 'none';
+			
+			$styles->second_demo_style->src	= plugins_url( 'css/demostyle.css', __FILE__ );
+			
+			$styles->third_demo_style = plugins_url( 'css/demostyle.css', __FILE__ );
+
+$optionspage->add_style( $styles );
+			
+
+			/*
+			 * Sections
+			 * 
+			 * tag->title
+			 * tag->description
+			 */
+			$sections= new stdClass();
+			
+			$sections->general->title 		= __('General Settings');
+			$sections->general->description = __('Description for general settings (optional).');
+
+			$sections->multi->title			= __('Multiple Choice');
+			$sections->multi->description	= __('More than one choice are available.');
+			
+$optionspage->add_section( $sections );
 					
-					array(
-						'id'		 => 'demo_checkbox',
-						'title'		 => __('Checkbox'),
-						'desc'		 => __('The description of the checkbox'),
-						'text_after' => __('Text after the checkbox. This text is formated as <code>label</code>.'),
-						'std'		 => 'on', // values are 'on' or '' (empty). Everything else than 'on' is equal to an empty value
-						'type'		 => 'checkbox',
-						'section'	 => 'general',
-					),
-					
-					array(
-						'id'		 => 'demo_textinput',
-						'title'		 => __('Text input'),
-						'desc'		 => __('The description of the text input'),
-						'text_after' => __('Text after the input-field'),
-						'std'		 => 'demo text',
-						'size'		 => 30,
-						'type'		 => 'text',
-						'section'	 => 'general',
-					),
-					
-					array(
-						'id'		 => 'demo_password',
-						'title'		 => __('Password'),
-						'desc'		 => __('You can even preselect a standard password'),
-						'text_after' => __('Text after the password-field'),
-						'std'		 => 'password',
-						'size'		 => 30,
-						'type'		 => 'password',
-						'section'	 => 'general',
-					),
-					
-					array(
-						'id'		 => 'demo_texarea',
-						'title'		 => __('Textarea'),
-						'desc'		 => __('The description of the textarea'),
-						'text_after' => __('Text after the textarea'),
-						'std'		 => 'Textareas are good for longer inputs. You can select the width and height of the textarea with the rows- and cols-parameter.',
-						'rows'		 => 3,
-						'cols'		 => 30,
-						'type'		 => 'textarea',
-						'section'	 => 'general',
-					),
-					
-					array(
-						'id'		 => 'demo_radio',
-						'title'		 => __('Radio'),
-						'desc'		 => __('The description of the radio'),
-						'choices'	 => array(
-								'yes'	=> 'Yes',
-								'no'	=> 'No',
-								'maybe'	=> 'Maybe'
-						),
-						'std'		 => 'yes',
-						'type'		 => 'radio',
-						'section'	 => 'multi',
-					),
-					
-					array(
-						'id'		 => 'demo_select',
-						'title'		 => __('Select'),
-						'desc'		 => __('The description of select'),
-						'choices'	 => array(
-								'' => 'Please select',
-								'yes'	 => 'Yes',
-								'no'	 => 'No',
-								'maybe'	 => 'Maybe'
-						),
-						'std'		 => '',
-						'type'		 => 'select',
-						'section'	 => 'multi',
-					),
-					
-					array(
-						'id'		 => 'demo_multicheckbox',
-						'title'		 => __('Multi checkbox'),
-						'desc'		 => __('The description of multi checkbox'),
-						'choices'	 => array( 
-							'yes'	=> 'Yes',
-							'no'	=> 'No',
-							'maybe'	=> 'Maybe'
-						),
-						'std'		 => array( 'no', 'maybe' ),
-						'type'		 => 'mcheckbox',
-						'section'	 => 'multi',
-					),
+			/*
+			 * Settings fields
+			 * 
+			 * Each field can define some params. Minimum are 'id', 'type', 'title' and 'section'
+			 * 
+			 * tag->id
+			 * tag->type
+			 * tag->title
+			 * tag->section
+			 * tag->some_other_params
+			 */
+			
+			/* fields for section 'general' */ 
+			
+			// heading field
+			$field->heading = new stdClass();
+			$field->heading->id			= 'demo_heading';
+			$field->heading->type		= 'heading';
+			$field->heading->title		= 'Heading';
+			$field->heading->section	= 'general';
+			$field->heading->description	= __('Headings only use the title and description as parameter.');
+$optionspage->add_field( $field );
+			
+			// custom field
+			$field->custom = new stdClass();
+			$field->custom->id			= 'demo_custom';
+			$field->custom->type		= 'custom';
+			$field->custom->title		= 'Custom';
+			$field->custom->sedction	= 'general';
+			$field->custom->description	= 'Custum is using a callbackfunction to display the input';
+			$field->custom->callback	= array( __CLASS__, 'custom_callback' );
+			// each single array-element is passed as single argument to the
+			// callback-function.
+			// all keys in an associativ array will be lost.
+			// if an array should passed as argument to the callback-function,
+			// it must be itself an array.
+			$field->custom->arguments	= array( 'one' => 'eins', array( 'two' => 'zwei' ) );
+$optionspage->add_field( $field );
+			
 
-					array(
-						'id'		 => 'demo_mselect',
-						'title'		 => __('Multi-Select'),
-						'desc'		 => __('The description of multi-select'),
-						'choices'	 => array(
-								'' => 'Please select',
-								'yes'	 => 'Yes',
-								'no'	 => 'No',
-								'maybe'	 => 'Maybe'
-						),
-						'std'		 => array( 'yes', 'no' ),
-						'size'		 => 0,
-						'type'		 => 'mselect',
-						'section'	 => 'multi',
-					),
+			// checkbox field
+			$field->checkbox = new stdClass();
+			$field->checkbox->id			= 'demo_checkbox';
+			$field->checkbox->type			= 'checkbox';
+			$field->checkbox->title			= __('Checkbox');
+			$field->checkbox->section		= 'general';
+			$field->checkbox->description 	= __('The description of the checkbox');
+			$field->checkbox->text_after 	= __('Text after the checkbox. This text is formated as <code>label</code>.');
+			$field->checkbox->std		 	= 'on'; // values are 'on' or '' (empty). Everything else than 'on' is equal to an empty value
+$optionspage->add_field( $field );
+			
+			
+			// adding more than one field at once
+			$field = new stdClass();
 
-				), // end_settings-fields
-				
-			);
+			// input field
+			$field->input->id		 	= 'demo_textinput';
+			$field->input->title		= __('Text input');
+			$field->input->description	= __('The description of the text input');
+			$field->input->text_after 	= __('Text after the input-field');
+			$field->input->std		 	= 'demo text';
+			$field->input->size			= 30;
+			$field->input->type			= 'text';
+			
+			// password field
+			$field->password->id			= 'demo_password';
+			$field->password->title			= __('Password');
+			$field->password->description 	= __('You can even preselect a standard password');
+			$field->password->text_after	= __('Text after the password-field');
+			$field->password->std			= 'password';
+			$field->password->size			= 30;
+			$field->password->type			= 'password';
+			
+			// textarea field
+			$filed->textarea->id			= 'demo_texarea';
+			$filed->textarea->title			= __('Textarea');
+			$filed->textarea->description	= __('The description of the textarea');
+			$filed->textarea->text_after	= __('Text after the textarea');
+			$filed->textarea->std			= 'Textareas are good for longer inputs. You can select the width and height of the textarea with the rows- and cols-parameter.';
+			$filed->textarea->rows			= 3;
+			$filed->textarea->cols			= 30;
+			$filed->textarea->type			= 'textarea';
+			$filed->textarea->section		= 'general';
 
-			// create the options-page
-			self::$options_page = new Easy_Settings_API( $this->settings, __FILE__); // 
+$optionspage->add_field( $field );
 
-			// optional way to initialize and start the class
-			// $optionpage->set_settings( $settings );
-			// $optionpage->create_option_page();			
+
+			/* fields for section 'multi' (inputs with multiple choice) */
+	
+			$mfield = new stdClass();
+					
+			// radio field
+			$mfields->radio->id				= 'demo_radio';
+			$mfields->radio->title			= __('Radio');
+			$mfields->radio->description	= __('The description of the radio');
+			$mfields->radio->choices		= array(
+												'yes'	=> 'Yes',
+												'no'	=> 'No',
+												'maybe'	=> 'Maybe'
+												);
+			$mfields->radio->std				= 'yes';
+			$mfields->radio->type			= 'radio';
+			//$mfields->radio->section		= 'multi';
+			
+			// select field
+			$mfields->select->id			= 'demo_select';
+			$mfields->select->title			= __('Select');
+			$mfields->select->description	= __('The description of select');
+			$mfields->select->choices		= array(
+												'' => 'Please select',
+												'yes'	 => 'Yes',
+												'no'	 => 'No',
+												'maybe'	 => 'Maybe'
+												);
+			$mfields->select->std			= '';
+			$mfields->select->type			= 'select';
+			//$mfields->select->section		= 'multi';
+					
+			// field multicheckbox
+			$mfields->mcheckbox->id				= 'demo_multicheckbox';
+			$mfields->mcheckbox->title			= __('Multi checkbox');
+			$mfields->mcheckbox->description	= __('The description of multi checkbox');
+			$mfields->mcheckbox->choices		= array( 
+													'yes'	=> 'Yes',
+													'no'	=> 'No',
+													'maybe'	=> 'Maybe'
+													);
+			$mfields->mcheckbox->std			= array( 'no', 'maybe' );
+			$mfields->mcheckbox->type			= 'mcheckbox';
+			//$mfields->mcheckbox->section		= 'multi';
+
+			// field multiselect
+			$mfields->mselect->id			= 'demo_mselect';
+			$mfields->mselect->title		= __('Multi-Select');
+			$mfields->mselect->description	= __('The description of multi-select');
+			$mfields->mselect->choices		= array(
+												'' => 'Please select',
+												'yes'	 => 'Yes',
+												'no'	 => 'No',
+												'maybe'	 => 'Maybe'
+												);
+			$mfields->mselect->std			= array( 'yes', 'no' );
+			$mfields->mselect->size			= 0;
+			$mfields->mselect->type			= 'mselect';
+			//$mfields->mselect->section		= 'multi';
+
+			// adding fields to section 'multi'
+$optionspage->add_field( $mfields, 'multi' );
+
+			
+$optionspage->create_optionspage();
+			
+//$base_config->sections = $sections;
+//$op = new Easy_Settings_API( $base_config );
 
 		}
 		

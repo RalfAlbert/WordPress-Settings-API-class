@@ -38,16 +38,9 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		/**
 		 * 
 		 * Defaults for settings fields
-		 * @var array $settings_fields_defaults
-		 */
-		public $settings_fields_defaults = array();
-		
-		/**
-		 * 
-		 * Copy of $settings_fields_defaults. For internal use
 		 * @var object $filed_defaults
 		 */
-		private static $field_defaults;
+		private static $field_defaults = null;
 				
 		/**
 		 * 
@@ -66,24 +59,24 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		 */
 		public function __construct()
 		{
-			$this->settings_fields_defaults = array(
-				'title'		 => 'Empty',
-				'section'	 => 'general',			
-				'id'		 => 'default_field',
-				'desc'		 => '',
-				'text_after' => '',
-				'std'		 => '',
-				'type'		 => 'text',
-				'size'		 => 0,
-				'rows'		 => 3,
-				'cols'		 => 25,
-				'choices'	 => array(),
-				'arguments'  => array(),
-				'class'		 => ''
-			);
+			$sfd = new stdClass();
+			$sfd->title		 = 'Empty';
+			$sfd->section	 = 'general';			
+			$sfd->id		 = 'default_field';
+			$sfd->desc		 = '';
+			$sfd->text_after = '';
+			$sfd->std		 = '';
+			$sfd->type		 = 'text';
+			$sfd->size		 = 0;
+			$sfd->rows		 = 3;
+			$sfd->cols		 = 25;
+			$sfd->choices	 = array();
+			$sfd->arguments	 = array();
+			$sfd->class		 = '';
 			
-			self::$field_defaults = (object) $this->settings_fields_defaults;
-			self::$field_defaults->options_name = 'empty';
+			$sfd->options_name = 'empty';
+			
+			self::$field_defaults = $sfd;
 			
 		}
 		
