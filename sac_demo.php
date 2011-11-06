@@ -40,7 +40,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 		 * Instance of Easy_Settings_API. Will be used in validate_input()
 		 * @var object $options_page
 		 */
-		public static $options_page = null;
+		public static $optionspage = null;
 		
 		/**
 		 * 
@@ -160,7 +160,7 @@ $optionspage->basic_config( $base_config, __FILE__ );
 			
 			$styles->third_demo_style = plugins_url( 'css/demostyle.css', __FILE__ );
 
-$optionspage->add_style( $styles );
+//$optionspage->add_style( $styles );
 
 			/*
 			 * Sections
@@ -331,9 +331,9 @@ $optionspage->add_field( $mfields, 'multi' );
 
 			
 $optionspage->create_optionspage();
-			
-//$base_config->sections = $sections;
-//$op = new Easy_Settings_API( $base_config );
+
+// copy the config for use in validate-callback
+self::$optionspage = $optionspage;
 
 		}
 		
@@ -377,10 +377,17 @@ $optionspage->create_optionspage();
 			 * to care about the rest.
 			 * 
 			 */
-			
-			$settings_fields = self::$plugin_self->settings['settings_fields'];
-			$input = call_user_func_array( array( self::$options_page, 'check_checkboxes' ), array( $settings_fields, $input ) );
 
+			$config = self::$optionspage->get_config();
+			$fields = array();
+			foreach( $config->sections as $section ){
+ 				foreach( $section->fields as $field ){
+ 					array_push( $fields, (array) $field );
+ 				}
+ 			}
+ 			
+ 			$input = call_user_func_array( array( self::$optionspage, 'check_checkboxes' ), array( $fields, $input ) );
+die(var_dump($input));
 			return $input;
 		}
 		

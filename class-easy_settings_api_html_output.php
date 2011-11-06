@@ -3,7 +3,7 @@
  * @package WordPress
  * @subpackage Settings-API class
  * @author Ralf Albert
- * @version 0.5.1
+ * @version 0.5.2
  * @license GPL
  */
 
@@ -40,7 +40,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		 * Defaults for settings fields
 		 * @var object $filed_defaults
 		 */
-		private static $field_defaults = null;
+		public static $fields_defaults = null;
 				
 		/**
 		 * 
@@ -63,7 +63,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 			$sfd->title		 = 'Empty';
 			$sfd->section	 = 'general';			
 			$sfd->id		 = 'default_field';
-			$sfd->desc		 = '';
+			$sfd->description = '';
 			$sfd->text_after = '';
 			$sfd->std		 = '';
 			$sfd->type		 = 'text';
@@ -76,7 +76,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 			
 			$sfd->options_name = 'empty';
 			
-			self::$field_defaults = $sfd;
+			self::$fields_defaults = $sfd;
 			
 		}
 		
@@ -88,8 +88,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		 * @since 0.4
 		 * @access public
 		 */
-		public static function display_page( $args = null )
-		{
+		public static function display_page( $args = null ){
 			if( null === $args )
 				return false;
 
@@ -131,8 +130,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		/**
 		 * custom settings field
 		 */
-		public static function custom( $args )
-		{
+		public static function custom( $args ){
 			if( null === $args )
 				return false;
 			
@@ -154,97 +152,78 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		/**
 		 * checkbox
 		 */
-		public static function checkbox( $args = null )
-		{
+		public static function checkbox( $args = null ){
 			if( null === $args )
 				return false;
 
-			$args = self::parse_args( $args, self::$field_defaults );
-
-			$checked = '';
-			if( isset( self::$options[$args->id] ) && 'on' === self::$options[$args->id] )
-				$checked = ' checked="checked"';
-	
-			echo '<input' . $args->class . ' type="checkbox" id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']" value="on"' . $checked . ' /> <label for="' . $args->id . '">' . $args->text_after . '</label>';
-	
-			self::display_field_description( $args->desc );
-		}
-	
-		/**
-		 * select field
-		 */
-		public static function select( $args = null )
-		{
-			if( null === $args )
-				return false;
-
-			$args = self::parse_args( $args, self::$field_defaults );
+			$args = self::parse_args( $args, self::$fields_defaults );
 			
-			$lines = '';
-			if( isset( $args->size ) && 1 < $args->size )
-				$lines = ' size="' . $args->size . '"';
+			( isset( self::$options[$args->id] ) && 'on' === self::$options[$args->id] ) ? 
+				$checked = 'checked="checked"' : $checked = ''; 
 	
-			echo '<select' . $args->class . ' name="' . $args->options_name . '[' . $args->id . ']"' . $lines . ' style="height:100%">';
-	
-			foreach( $args->choices as $value => $label ) {
-				$selected = '';
-				if( isset( self::$options[$args->id] ) && self::$options[$args->id] == $value )
-					$selected = ' selected="selected"';
-				echo '<option value="' . $value . '"' . $selected . '>' . $label . '</option>';
-			}
-	
-			echo '</select>';
-	
-			self::display_field_description( $args->desc );
+			//echo '<input' . $args->class . ' type="checkbox" id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']" value="on"' . $checked . ' /> <label for="' . $args->id . '">' . $args->text_after . '</label>';
+			$format = '<input id="%1$s" name="%3$s[%1$s]" %2$s type="checkbox" value="on" %5$s /> <label for="%1$s">%4$s</label>';
+			printf($format, $args->id, $args->class, $args->options_name, $args->text_after, $checked );
+			
+			self::display_field_description( $args->description );
 		}
-		
+	
 		/**
 		 * radio buttons
 		 */
-		public static function radio( $args = null )
-		{
+		public static function radio( $args = null ){
 			if( null === $args )
 				return false;
 
-			$args = self::parse_args( $args, self::$field_defaults );
+			$args = self::parse_args( $args, self::$fields_defaults );
 			
 			$i = 0;
 			
-			foreach( $args->choices as $value => $label) {
-				$selected = '';
-				if( isset( self::$options[$args->id] ) && self::$options[$args->id] == $value )
-					$selected = ' checked="checked"';
+			foreach( $args->choices as $key => $label) {
+
+				( isset( self::$options[$args->id] ) && self::$options[$args->id] == $key ) ?
+					$selected = 'checked="checked"' : $selected = ''; 
 	
-				echo '<input' . $args->class . ' type="radio" name="' . $args->options_name . '[' . $args->id . ']" id="' . $args->id . $i . '" value="' . $value . '"' . $selected . '> <label for="' . $args->id . $i . '">' . $label . '</label>';
-	
+				//echo '<input' . $args->class . ' type="radio" name="' . $args->options_name . '[' . $args->id . ']" id="' . $args->id . $i . '" value="' . $value . '"' . $selected . '> <label for="' . $args->id . $i . '">' . $label . '</label>';
+				printf(
+					'<input id="%1$s4$s" name="%2$s[%1$s]" %3$s type="radio" value="%5$s" %6$s />
+					 <label for="%1$s%4$s">%7$s</label>',
+					$args->id, $args->options_name, $args->class, $i, $key, $selected, $label
+				);
+				
 				if( $i < count( $args->choices ) - 1)
 					echo '<br />';
 	
 				$i++;
 			}
 	
-			self::display_field_description( $args->desc );
+			self::display_field_description( $args->description );
 		}	
 		
 		/**
 		 * checkboxes with multiple selection
 		 */
-		public static function mcheckbox( $args = null )
-		{
+		public static function mcheckbox( $args = null ){
 			if( null === $args )
 				return false;
 
-			$args = self::parse_args( $args, self::$field_defaults );
+			$args = self::parse_args( $args, self::$fields_defaults );
 			
 			$i = 0;
 	
 			foreach( $args->choices as $key => $label) {
-				$checked = '';
-				if( isset( self::$options[$args->id . '-' . $key]) && 'on' === self::$options[$args->id . '-' . $key])
-					$checked = ' checked="checked"';
+
+				( isset( self::$options[$args->id . '-' . $key]) && 'on' === self::$options[$args->id . '-' . $key]) ?
+					$checked = 'checked="checked"' : $checked = '';
 	
-				echo '<input' . $args->class . ' type="checkbox" id="' . $args->id . '-' . $key . '" name="' . $args->options_name . '[' . $args->id . '-' . $key . ']" value="on"' . $checked . ' /> <label for="' . $args->id . '">' . $label . '</label>';
-	
+				//echo '<input' . $args->class . ' type="checkbox" id="' . $args->id . '-' . $key . '" name="' . $args->options_name . '[' . $args->id . '-' . $key . ']" value="on"' . $checked . ' /> <label for="' . $args->id . '">' . $label . '</label>';
+				printf(
+					'<input id="%1$s-%4$s" name="%2$s[%1$s-%4$s]" type="checkbox" value="on" %5$s />
+					<label for="' . $args->id . '">' . $label . '</label>',
+					$args->id, $args->options_name, $args->class, $key, $checked
+				
+				);
+				
 				if ( $i < count( $args->choices ) - 1 )
 					echo '<br />';
 	
@@ -253,105 +232,161 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 			
 			// this hidden input is neccessary to identify if the form is already saved
 			// or if it is the initial form with standard values
-			echo '<input type="hidden" name="' . $args->options_name . '[' . $args->id . ']" value="on" />';
+			//echo '<input type="hidden" name="' . $args->options_name . '[' . $args->id . ']" value="on" />';
+			printf(
+				'<input type="hidden" name="%2$s[%1$s]" value="on" />',
+				$args->id, $args->options_name
+			);
 			
-			self::display_field_description( $args->desc );
+			self::display_field_description( $args->description );
+		}
+		
+		/**
+		 * select field
+		 */
+		public static function select( $args = null ){
+			if( null === $args )
+				return false;
+
+			$args = self::parse_args( $args, self::$fields_defaults );
+			
+			$size = '';
+			if( isset( $args->size ) && 1 < $args->size )
+				$size = 'size="' . $args->size . '"';
+	
+			//echo '<select' . $args->class . ' name="' . $args->options_name . '[' . $args->id . ']"' . $lines . ' style="height:100%">';
+			printf(
+				'<select id="%1$s" name="%3$s[%1$s]" %2$s %4$s style="height:100%%">',			
+				$args->id, $args->class, $args->options_name, $size
+			);
+			
+			foreach( $args->choices as $key => $label ) {
+				$selected = '';
+				if( isset( self::$options[$args->id] ) && self::$options[$args->id] == $key )
+					$selected = 'selected="selected"';
+				//echo '<option value="' . $value . '"' . $selected . '>' . $label . '</option>';
+				printf(
+					'<option value="%1$s" %2$s>%3$s</option>',
+					$key, $selected, $label
+				);
+			}
+	
+			echo '</select>' . $args->text_after;
+	
+			self::display_field_description( $args->description );
 		}
 		
 		/**
 		 * select field with multiple selection
 		 */
-		public static function mselect( $args = null )
-		{
+		public static function mselect( $args = null ){
 			if( null === $args )
 				return false;
 
-			$args = self::parse_args( $args, self::$field_defaults );
+			$args = self::parse_args( $args, self::$fields_defaults );
 			
-			$lines = '';
-			if( isset( $args->size ) && 1 < $args->size )
-				$lines = ' size="' . $args->size . '"';
+			( isset( $args->size ) && 1 < $args->size ) ?
+				$size = 'size="' . $args->size . '"' : $size = '';
+
+//var_dump(self::$options[$args->id]);
+//var_dump(self::$options);
 	
-			echo '<select' . $args->class . ' name="' . $args->options_name . '[]"' . $lines . ' multiple="multiple" style="height:100%">';
-	
+			printf( '<select id="%1$s" %2$s name="%3$s[%1$s][]" %4$s multiple="multiple" style="height:100%%">', 
+				$args->id, $args->class, $args->options_name, $size
+			);
+			
 			foreach( $args->choices as $key => $label ) {
-				$selected = '';
-				if( isset( self::$options[$args->id . '-' . $key] ) )
-					$selected = ' selected="selected"';
-				echo '<option value="' . $key . '"' . $selected . '>' . $label . '</option>';
+				
+				( in_array( $key, self::$options[$args->id] ) ) ?
+					$selected = 'selected="selected"' : $selected = '';
+				//echo '<option value="' . $key . '"' . $selected . '>' . $label . '</option>';
+				printf(
+					'<option value="%1$s" %2$s>%3$s</option>',
+					$key, $selected, $label
+				);
+				
 			}
 	
-			echo '</select>';
+			echo '</select>' . $args->text_after;
 			
-			self::display_field_description( $args->desc );
+			self::display_field_description( $args->description );
 		}
 		
 		/**
 		 * textarea
 		 */
-		public static function textarea( $args = null )
-		{
+		public static function textarea( $args = null ){
 			if( null === $args )
 				return false;
 
-			$args = self::parse_args( $args, self::$field_defaults );
+			$args = self::parse_args( $args, self::$fields_defaults );
 			
 			$value = isset( self::$options[$args->id] ) ? self::$options[$args->id] : $args->std;
 			
-			echo '<textarea' . $args->class . ' id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']" rows="' . $args->rows . '" cols="' . $args->cols . '" placeholder="' . $args->std . '">' . esc_textarea( $value ) . '</textarea>';
+			//echo '<textarea' . $args->class . ' id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']" rows="' . $args->rows . '" cols="' . $args->cols . '" placeholder="' . $args->std . '">' . esc_textarea( $value ) . '</textarea>';
+			printf(
+				'<textarea id="%1$s" name="%2$s[%1$s]" %3$s rows="%4$s" cols="%5$s" placeholder="%6$s">%7$s</textarea>%8$s',
+				$args->id, $args->options_name, $args->class, $args->rows, $args->cols, $args->std, esc_textarea( $value ), $args->text_after
+			);
 
-			self::display_field_description( $args->desc );		
+			self::display_field_description( $args->description );		
 		}
 		
 		/**
 		 * password field
 		 */
-		public static function password( $args = null )
-		{
+		public static function password( $args = null ){
 			if( null === $args )
 				return false;
 
-			$args = self::parse_args( $args, self::$field_defaults );
+			$args = self::parse_args( $args, self::$fields_defaults );
 			
 			$value = isset( self::$options[$args->id] ) ? self::$options[$args->id] : $args->std;
 			
-			echo '<input' . $args->class . ' type="password" id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']" value="' . $value . '" />' . $args->text_after;
+			//echo '<input' . $args->class . ' type="password" id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']" value="' . $value . '" />' . $args->text_after;
+			printf(
+				'<input id="%1$s" name="%2$s[%1$s]" %3$s type="password"  value="%4$s" />%5$s',
+				$args->id, $args->options_name, $args->class, $value, $args->text_after
+			);
 			
-			self::display_field_description( $args->desc );
+			self::display_field_description( $args->description );
 		}
 		
 		/**
 		 * input field
 		 */
-		public static function text( $args = null )
-		{
+		public static function text( $args = null ){
 			if( null === $args )
 				return false;
 
-			$args = self::parse_args( $args, self::$field_defaults );
+			$args = self::parse_args( $args, self::$fields_defaults );
 			
 			$value = isset( self::$options[$args->id] ) ? self::$options[$args->id] : $args->std;
 			
-			echo '<input' . $args->class . ' type="text" size="' . $args->size . ' id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']"
-				placeholder="' . $args->std . '" value="' . esc_html( $value ) . '" />' . $args->text_after;
-			
-			self::display_field_description( $args->desc );	
+//			echo '<input' . $args->class . ' type="text" size="' . $args->size . ' id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']"
+//				placeholder="' . $args->std . '" value="' . esc_html( $value ) . '" />' . $args->text_after;
+			printf(
+				'<input id="%1$s" name="%2$s[%1$s]" %3$s type="text"  value="%4$s" size="%6$s" placeholder="%7$s" />%5$s',
+				$args->id, $args->options_name, $args->class, esc_html( $value ), $args->text_after, $args->size, $args->std
+			);
+
+			self::display_field_description( $args->description );	
 		}
 		
 		/**
 		 * heading
 		 */
-		public static function heading( $args )
-		{
+		public static function heading( $args ){
 			if( null === $args )
 				return false;
 
 			$def = new stdClass();
-			$def->desc = '';
+			$def->description = '';
 			
 			$args = self::parse_args( $args, $def, true );
 						
-			echo '</td></tr><tr valign="top"><td colspan="2">' . $args->desc;
+			echo '</td></tr><tr valign="top"><td colspan="2">' . $args->description;
+
 		}
 		
 		/**
@@ -362,7 +397,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		 * @since 0.2
 		 * @access public static
 		 */
-		public static function display_field_description( $desc ) {
+		public static function display_field_description( $desc ){
 			if( ! empty( $desc ) )
 				echo '<br /><small>' . $desc . '</small>';
 		}
@@ -375,8 +410,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		 * @since 0.5
 		 * @access public
 		 */
-		public function set_options( $options = null )
-		{
+		public function set_options( $options = null ){
 			if( null !== $options )
 				self::$options = $options;
 		}
@@ -389,10 +423,21 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 		 * @since 0.5
 		 * @access public
 		 */
-		public function get_options()
-		{
+		public function get_options(){
 			return self::$options;
-		}	
+		}
+		
+		/**
+		 * 
+		 * Getter for fields defaults
+		 * @param none
+		 * @return object $fields_defaults
+		 * @since 0.5.2
+		 * @access public
+		 */
+		public function get_fields_defaults(){
+			return self::$fields_defaults;
+		}
 		
 		/**
 		 * 
@@ -413,9 +458,15 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 			if( null === $input || null === $defaults )
 				return false;
 			
-			foreach( $defaults as $key => $value ){
-				if( ! isset( $input->$key ) )
-					$input->$key = $defaults->$key;
+			// let WordPress parsing arrays. cast the returned array to an object
+			if( is_array( $input ) ){
+				$input = (object) wp_parse_args( $input, (array) $defaults );
+			}
+			else {
+				foreach( $defaults as $key => $value ){
+					if( ! isset( $input->$key ) )
+						$input->$key = $defaults->$key;
+				}
 			}
 			
 			if( $cleaning ){
