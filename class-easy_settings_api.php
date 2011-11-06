@@ -121,9 +121,14 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		
 		/**
 		 * 
-		 * Enter description here ...
-		 * @param unknown_type $config
-		 * @param unknown_type $parent
+		 * Setup the basic configuration. Method expect an object as param.
+		 * A easier way to setup the basic configuration is to pass the 
+		 * filepath to the method. The method than will try to read the 
+		 * plugin headers and setup the most of the configuration
+		 * @param object $config
+		 * @param string $parent Full absolute path to the plugin file (optional)
+		 * @since 0.7.0
+		 * @access public
 		 */
 		public function basic_config( $config = null, $parent = '' ){
 				// maybe only __FILE__ was set
@@ -177,9 +182,6 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				if ( ! in_array( $config->menu_position, $whitelist_where ) )
 					$config->menu_position = 'options';
 				
-				// validate capability
-				//TODO: validate capability 
-				 
 				// merge internal config with base_config
 				self::$config->basic = self::parse_args( self::$config->basic, $config );			
 					
@@ -204,9 +206,10 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		
 		/**
 		 * 
-		 * Enter description here ...
+		 * Add javascript(s) to the optionspage
 		 * @param object $scripts
-		 * @return void
+		 * @since 0.7.0
+		 * @access public
 		 */
 		public function add_script( $scripts = null ){
 			if( null === $scripts || ! is_object( $scripts ) )
@@ -238,8 +241,10 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		
 		/**
 		 * 
-		 * Enter description here ...
-		 * @param unknown_type $styles
+		 * Add stylesheet(s) to the optionspage
+		 * @param object $styles
+		 * @since 0.7.0
+		 * @access public
 		 */
 		public function add_style( $styles = null ){
 			if( null === $styles )
@@ -265,8 +270,10 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		
 		/**
 		 * 
-		 * Enter description here ...
-		 * @param unknown_type $sections
+		 * Add section(s) to the optionspage
+		 * @param object $sections
+		 * @since 0.7.0
+		 * @access public
 		 */
 		public function add_section( $sections = null ){
 			if( null === $sections )
@@ -286,9 +293,9 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 
 		/**
 		 * 
-		 * Enter description here ...
-		 * @param unknown_type $fields
-		 * @param unknown_type $section
+		 * Add setting field(s) to a section
+		 * @param object $fields
+		 * @param string $section Name ofg the section the field(s) go to (optional)
 		 */
 		public function add_field( $fields = null, $section = '' ){
 			if( null === $fields )
@@ -345,9 +352,8 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		
 		/**
 		 *
-		 * Adding the page to the menu and register the settings. Displays errors if any are encountered
-		 * @param none
-		 * @return none
+		 * Adding the page to the menu and register the settings.
+		 * Displays errors if any are encountered.
 		 * @uses add_action()
 		 * @since 0.1
 		 * @access public
@@ -368,7 +374,6 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * 
 		 * Adding an error message to the internal error-handling
 		 * @param string $msg
-		 * @return void
 		 * @since 0.6.1
 		 * @access protected
 		 */
@@ -380,8 +385,6 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * 
 		 * Show errors as admin notice
 		 * Hooked in via 'admin_notices'
-		 * @param none
-		 * @return void
 		 * @since 0.6.1
 		 * @access public
 		 */
@@ -497,13 +500,11 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		}
 	
 /* -------------------------------------------------------------------------- */
-/* --- buisnesslogic -------------------------------------------------------- */
+/* --- businesslogic -------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 		/**
 		 *
-		 * Add the page to the admin menu. Store page-hook in $_settings.
-		 * @param none
-		 * @return none
+		 * Add the page to the admin menu. Store page-hook in $config->basic->admin_page
 		 * @uses add_xxx_page()
 		 * @since 0.1
 		 * @access public
@@ -530,11 +531,8 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		/**
 		 *
 		 * Register the settings via WP Settings-API
-		 * @param none
-		 * @return none
 		 * @uses register_settings()
 		 * @uses add_settings_section()
-		 * @uses create_settings()
 		 * @since 0.1
 		 * @access public
 		 */
@@ -557,7 +555,6 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 *
 		 * Create a settings field with given arguments
 		 * @param object $args
-		 * @return none
 		 * @uses add_settings_field()
 		 * @since 0.1
 		 * @access public
@@ -586,8 +583,6 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		/**
 		 *
 		 * Display the page
-		 * @param none
-		 * @return none
 		 * @uses settings_fields()
 		 * @uses do_settings_sections()
 		 * @since 0.1
@@ -613,7 +608,6 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 *
 		 * Display the description for a section if defined
 		 * @param array $section
-		 * @return none
 		 * @since 0.1
 		 * @access public
 		 */
@@ -627,10 +621,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		/**
 		 *
 		 * Outputs the HTML for every single setting field
-		 * @param array $args
-		 * @return none
-		 * @uses esc_textarea (since WP 3.1)
-		 * @uses esc_html
+		 * @param object $args
 		 * @since 0.1
 		 * @access public
 		 */
@@ -701,7 +692,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * Enqueue Scripts
 		 * Enqueue registered JavaScripts
 		 * @param none (use in $_settings stored sources)
-		 * @return void
+		 * @uses wp_enqueue_script()
 		 * @since 0.6
 		 * @access public static
 		 */
@@ -731,8 +722,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * 
 		 * Enqueue stylesheets
 		 * Enqueue stylesheets, hooked by admin_print_styles-
-		 * @param none
-		 * @return void
+		 * @uses wp_enqueue_style()
 		 * @since 0.6.2
 		 * @access public
 		 */
