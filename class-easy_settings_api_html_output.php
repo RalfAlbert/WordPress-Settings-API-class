@@ -3,7 +3,7 @@
  * @package WordPress
  * @subpackage Settings-API class
  * @author Ralf Albert
- * @version 0.5.2
+ * @version 0.7.0
  * @license GPL
  */
 
@@ -161,9 +161,11 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 			( isset( self::$options[$args->id] ) && 'on' === self::$options[$args->id] ) ? 
 				$checked = 'checked="checked"' : $checked = ''; 
 	
-			//echo '<input' . $args->class . ' type="checkbox" id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']" value="on"' . $checked . ' /> <label for="' . $args->id . '">' . $args->text_after . '</label>';
-			$format = '<input id="%1$s" name="%3$s[%1$s]" %2$s type="checkbox" value="on" %5$s /> <label for="%1$s">%4$s</label>';
-			printf($format, $args->id, $args->class, $args->options_name, $args->text_after, $checked );
+			printf(
+				'<input id="%1$s" name="%2$s[%1$s]" %3$s type="checkbox" value="on" %5$s />&nbsp;
+				<label for="%1$s">%4$s</label>',
+				$args->id, $args->options_name,$args->class,  $args->text_after, $checked
+			);
 			
 			self::display_field_description( $args->description );
 		}
@@ -184,9 +186,8 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 				( isset( self::$options[$args->id] ) && self::$options[$args->id] == $key ) ?
 					$selected = 'checked="checked"' : $selected = ''; 
 	
-				//echo '<input' . $args->class . ' type="radio" name="' . $args->options_name . '[' . $args->id . ']" id="' . $args->id . $i . '" value="' . $value . '"' . $selected . '> <label for="' . $args->id . $i . '">' . $label . '</label>';
 				printf(
-					'<input id="%1$s4$s" name="%2$s[%1$s]" %3$s type="radio" value="%5$s" %6$s />
+					'<input id="%1$s4$s" name="%2$s[%1$s]" %3$s type="radio" value="%5$s" %6$s />&nbsp;
 					 <label for="%1$s%4$s">%7$s</label>',
 					$args->id, $args->options_name, $args->class, $i, $key, $selected, $label
 				);
@@ -216,9 +217,8 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 				( isset( self::$options[$args->id . '-' . $key]) && 'on' === self::$options[$args->id . '-' . $key]) ?
 					$checked = 'checked="checked"' : $checked = '';
 	
-				//echo '<input' . $args->class . ' type="checkbox" id="' . $args->id . '-' . $key . '" name="' . $args->options_name . '[' . $args->id . '-' . $key . ']" value="on"' . $checked . ' /> <label for="' . $args->id . '">' . $label . '</label>';
 				printf(
-					'<input id="%1$s-%4$s" name="%2$s[%1$s-%4$s]" type="checkbox" value="on" %5$s />
+					'<input id="%1$s-%4$s" name="%2$s[%1$s-%4$s]" type="checkbox" value="on" %5$s />&nbsp;
 					<label for="' . $args->id . '">' . $label . '</label>',
 					$args->id, $args->options_name, $args->class, $key, $checked
 				
@@ -250,21 +250,19 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 
 			$args = self::parse_args( $args, self::$fields_defaults );
 			
-			$size = '';
-			if( isset( $args->size ) && 1 < $args->size )
-				$size = 'size="' . $args->size . '"';
+			( isset( $args->size ) && 1 < $args->size ) ?
+				$size = 'size="' . $args->size . '"' : $size = '';
 	
-			//echo '<select' . $args->class . ' name="' . $args->options_name . '[' . $args->id . ']"' . $lines . ' style="height:100%">';
 			printf(
 				'<select id="%1$s" name="%3$s[%1$s]" %2$s %4$s style="height:100%%">',			
 				$args->id, $args->class, $args->options_name, $size
 			);
 			
 			foreach( $args->choices as $key => $label ) {
-				$selected = '';
-				if( isset( self::$options[$args->id] ) && self::$options[$args->id] == $key )
-					$selected = 'selected="selected"';
-				//echo '<option value="' . $value . '"' . $selected . '>' . $label . '</option>';
+		
+				( isset( self::$options[$args->id] ) && self::$options[$args->id] == $key ) ?
+					$selected = 'selected="selected"' : $selected = '';
+	
 				printf(
 					'<option value="%1$s" %2$s>%3$s</option>',
 					$key, $selected, $label
@@ -288,9 +286,6 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 			( isset( $args->size ) && 1 < $args->size ) ?
 				$size = 'size="' . $args->size . '"' : $size = '';
 
-//var_dump(self::$options[$args->id]);
-//var_dump(self::$options);
-	
 			printf( '<select id="%1$s" %2$s name="%3$s[%1$s][]" %4$s multiple="multiple" style="height:100%%">', 
 				$args->id, $args->class, $args->options_name, $size
 			);
@@ -299,7 +294,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 				
 				( in_array( $key, self::$options[$args->id] ) ) ?
 					$selected = 'selected="selected"' : $selected = '';
-				//echo '<option value="' . $key . '"' . $selected . '>' . $label . '</option>';
+
 				printf(
 					'<option value="%1$s" %2$s>%3$s</option>',
 					$key, $selected, $label
@@ -323,7 +318,6 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 			
 			$value = isset( self::$options[$args->id] ) ? self::$options[$args->id] : $args->std;
 			
-			//echo '<textarea' . $args->class . ' id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']" rows="' . $args->rows . '" cols="' . $args->cols . '" placeholder="' . $args->std . '">' . esc_textarea( $value ) . '</textarea>';
 			printf(
 				'<textarea id="%1$s" name="%2$s[%1$s]" %3$s rows="%4$s" cols="%5$s" placeholder="%6$s">%7$s</textarea>%8$s',
 				$args->id, $args->options_name, $args->class, $args->rows, $args->cols, $args->std, esc_textarea( $value ), $args->text_after
@@ -343,7 +337,6 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 			
 			$value = isset( self::$options[$args->id] ) ? self::$options[$args->id] : $args->std;
 			
-			//echo '<input' . $args->class . ' type="password" id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']" value="' . $value . '" />' . $args->text_after;
 			printf(
 				'<input id="%1$s" name="%2$s[%1$s]" %3$s type="password"  value="%4$s" />%5$s',
 				$args->id, $args->options_name, $args->class, $value, $args->text_after
@@ -363,8 +356,6 @@ if( ! class_exists( 'Easy_Settings_API_Class_HTML_Output' ) )
 			
 			$value = isset( self::$options[$args->id] ) ? self::$options[$args->id] : $args->std;
 			
-//			echo '<input' . $args->class . ' type="text" size="' . $args->size . ' id="' . $args->id . '" name="' . $args->options_name . '[' . $args->id . ']"
-//				placeholder="' . $args->std . '" value="' . esc_html( $value ) . '" />' . $args->text_after;
 			printf(
 				'<input id="%1$s" name="%2$s[%1$s]" %3$s type="text"  value="%4$s" size="%6$s" placeholder="%7$s" />%5$s',
 				$args->id, $args->options_name, $args->class, esc_html( $value ), $args->text_after, $args->size, $args->std

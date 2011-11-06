@@ -3,7 +3,7 @@
  * @package WordPress
  * @subpackage Easy Settings API Class
  * @author Ralf Albert
- * @version 0.6.2
+ * @version 0.7.0
  *
  */
 
@@ -14,7 +14,7 @@
  * Domain Path: /languages
  * Description: Demo for the the Easy Settings-API Class (ESAC). This plugin create a simple option page to show all available setting fields
  * Author: Ralf Albert
- * Version: 0.6.2
+ * Version: 0.7.0
  * Author URI: http://neun12.de/
  * Licence: GPL
  */
@@ -100,10 +100,13 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 			if( null !== self::$plugin_self )
 				return self::$plugin_self;
 			
+			// register the deactivation hook
 			register_deactivation_hook( __FILE__, array( &$this, 'deactivation' ) );
 			
+			// create an instance of the class
 			$optionspage = new Easy_Settings_API();
 			
+			// starts with basic configuration
 			$base_config = new stdClass();
 			$base_config->options_group 	= self::OPTIONS_GROUP;
 			$base_config->options_name		= self::OPTIONS_NAME;
@@ -117,7 +120,7 @@ if( ! class_exists( 'Easy_Settings_API_Class_Demo' ) && function_exists( 'add_ac
 			$base_config->capability		= 'manage_options';
 			$base_config->icon				= 'icon-options-general';
 			
-$optionspage->basic_config( $base_config, __FILE__ );
+				$optionspage->basic_config( $base_config, __FILE__ );
 
 			
 			/*
@@ -142,14 +145,14 @@ $optionspage->basic_config( $base_config, __FILE__ );
 			$scripts->sac_demo2_js->in_footer		= true;
 
 
-//$optionspage->add_script( $scripts );
+				$optionspage->add_script( $scripts );
 
 
 			/*
 			 * Stylesheets
 			 *
-			 * tag->src = source
-			 * tag->deps = dependencies
+			 * tag->src 	= string		:: full relative path to sourcefile 
+			 * tag->deps 	= array			:: array with dependencies
 			 */	
 
 			$styles = new stdClass();
@@ -160,7 +163,7 @@ $optionspage->basic_config( $base_config, __FILE__ );
 			
 			$styles->third_demo_style = plugins_url( 'css/demostyle.css', __FILE__ );
 
-//$optionspage->add_style( $styles );
+				$optionspage->add_style( $styles );
 
 			/*
 			 * Sections
@@ -176,7 +179,7 @@ $optionspage->basic_config( $base_config, __FILE__ );
 			$sections->multi->title			= __('Multiple Choice');
 			$sections->multi->description	= __('More than one choice are available.');
 			
-$optionspage->add_section( $sections );
+				$optionspage->add_section( $sections );
 					
 			/*
 			 * Settings fields
@@ -199,7 +202,7 @@ $optionspage->add_section( $sections );
 			$field->heading->title		= 'Heading';
 			$field->heading->section	= 'general';
 			$field->heading->description	= __('Headings only use the title and description as parameter.');
-$optionspage->add_field( $field );
+				$optionspage->add_field( $field );
 			
 			// custom field
 			$field = new stdClass();
@@ -215,7 +218,7 @@ $optionspage->add_field( $field );
 			// if an array should passed as argument to the callback-function,
 			// it must be itself an array.
 			$field->custom->arguments	= array( 'one' => 'eins', array( 'two' => 'zwei' ) );
-$optionspage->add_field( $field );
+				$optionspage->add_field( $field );
 			
 
 			// checkbox field
@@ -227,7 +230,7 @@ $optionspage->add_field( $field );
 			$field->checkbox->description 	= __('The description of the checkbox');
 			$field->checkbox->text_after 	= __('Text after the checkbox. This text is formated as <code>label</code>.');
 			$field->checkbox->std		 	= 'on'; // values are 'on' or '' (empty). Everything else than 'on' is equal to an empty value
-$optionspage->add_field( $field );
+				$optionspage->add_field( $field );
 			
 			
 			// adding more than one field at once
@@ -254,17 +257,16 @@ $optionspage->add_field( $field );
 			$field->password->type			= 'password';
 			
 			// textarea field
-			$filed->textarea->id			= 'demo_texarea';
-			$filed->textarea->title			= __('Textarea');
-			$filed->textarea->description	= __('The description of the textarea');
-			$filed->textarea->text_after	= __('Text after the textarea');
-			$filed->textarea->std			= 'Textareas are good for longer inputs. You can select the width and height of the textarea with the rows- and cols-parameter.';
-			$filed->textarea->rows			= 3;
-			$filed->textarea->cols			= 30;
-			$filed->textarea->type			= 'textarea';
-			$filed->textarea->section		= 'general';
-
-$optionspage->add_field( $field );
+			$field->textarea->id			= 'demo_texarea';
+			$field->textarea->title			= __('Textarea');
+			$field->textarea->description	= __('The description of the textarea');
+			$field->textarea->text_after	= __('Text after the textarea');
+			$field->textarea->std			= 'Textareas are good for longer inputs. You can select the width and height of the textarea with the rows- and cols-parameter.';
+			$field->textarea->rows			= 3;
+			$field->textarea->cols			= 30;
+			$field->textarea->type			= 'textarea';
+			$field->textarea->section		= 'general';
+				$optionspage->add_field( $field );
 
 
 			/* fields for section 'multi' (inputs with multiple choice) */
@@ -324,16 +326,18 @@ $optionspage->add_field( $field );
 			$mfields->mselect->std			= array( 'yes', 'no' );
 			$mfields->mselect->size			= 0;
 			$mfields->mselect->type			= 'mselect';
-			//$mfields->mselect->section		= 'multi';
 
 			// adding fields to section 'multi'
-$optionspage->add_field( $mfields, 'multi' );
+			// notice that the section where to add the fields
+			// is set in method-call not in the field definitions
+			$optionspage->add_field( $mfields, 'multi' );
 
 			
-$optionspage->create_optionspage();
+			// create the optionspage
+			$optionspage->create_optionspage();
 
-// copy the config for use in validate-callback
-self::$optionspage = $optionspage;
+			// copy the config for use in validate-callback
+			self::$optionspage = $optionspage;
 
 		}
 		
@@ -378,6 +382,12 @@ self::$optionspage = $optionspage;
 			 * 
 			 */
 
+			/*
+			 *  this is a bit tricky. first we get the object with all sections. each section have an
+			 *  array with it's fields. in a second step we extract the fields from the sections and
+			 *  copy them into another array that will be used in the method-call
+			 */
+			
 			$config = self::$optionspage->get_config();
 			$fields = array();
 			foreach( $config->sections as $section ){
@@ -387,7 +397,7 @@ self::$optionspage = $optionspage;
  			}
  			
  			$input = call_user_func_array( array( self::$optionspage, 'check_checkboxes' ), array( $fields, $input ) );
-//die(var_dump($input));
+
 			return $input;
 		}
 		

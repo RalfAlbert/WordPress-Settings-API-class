@@ -110,20 +110,9 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			self::$config->scripts	= new stdClass();
 			self::$config->styles	= new stdClass();
 			self::$config->sections	= new stdClass();			
-			
-			// check if $settings was set. if not, just create an object of this class
-//			if( null !== $settings ) {
-//				$this->_setup( $settings );
-//				$this->init();
-//			}
 	
 		}
 
-		public function create_optionspage(){
-			$this->init();
-//			$this->show_errors();
-//			die( var_dump( self::$config->sections ) );
-		}
 		
 /* -------------------------------------------------------------------------- */
 /* class configuration ------------------------------------------------------ */
@@ -369,14 +358,14 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				
 		/**
 		 *
-		 * Adding the page to the menu and register the settings
+		 * Adding the page to the menu and register the settings. Displays errors if any are encountered
 		 * @param none
 		 * @return none
 		 * @uses add_action()
 		 * @since 0.1
 		 * @access public
 		 */
-		public function init(){
+		public function create_optionspage(){
 			// show errors
 			add_action( 'admin_notices', array( &$this, 'show_errors' ) );
 			
@@ -494,19 +483,17 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			
 			$where = 'add_' . $c->menu_position . '_page';
 			$c->admin_page = $where( $c->page_title, $c->menu_title, $c->capability, $c->page_slug, array( &$this, 'display_page' ) );
-			
-			
+
+
 			// register javascript(s) if set
-			if( ! empty( self::$config->scripts ) ){
-				add_action( 'load-' . $c->admin_page, array( __CLASS__, 'enqueue_scripts' ) );
-				
-			}
+			if( ! empty( self::$config->scripts ) )
+				add_action( 'load-' . $c->admin_page, array( __CLASS__, 'enqueue_scripts' ) );				
 			
 			// hook up custom stylesheets
 			if( ! empty( self::$config->styles ) )
 				add_action( 'admin_print_styles-' . $c->admin_page, array( &$this, 'enqueue_styles' ) );
 				
-			// copy back modified config
+			// copy back modified config (copy admin_page to config->basic)
 			self::$config->basic = $c;
 		}
 		
@@ -532,8 +519,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				
 				foreach ( $data->fields as $field ) {
 					$this->create_setting( $field );
-				}
-				
+				}	
 			}
 	
 		}	
@@ -559,7 +545,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			if( ! empty( $this->fields_defaults ) )	
 				$args = self::parse_args( $args, $this->fields_defaults );
 			else
-				$this->add_error( 'Can\t get field defaults from output class.');
+				$this->add_error( sprintf( "Can't get field defaults from output class. (%s)", __METHOD__ ) );
 						
 			// copy the 'id' to 'label_for'
 			$args->label_for = $args->id;
@@ -652,27 +638,12 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 					}
 			 }
 
-			// set standard for multi-checkbox
-			if( ( isset( $std ) && is_array( $std ) ) && 
-				( isset( $type) && $type == 'mcheckbox' ) &&
-				! isset( $this->options[$id] ) ) {
-	
-				 	foreach( $std as $key ) {
-						if( ! isset( $this->options[$id . '-' . $key] ) )
-							$this->options[$id . '-' . $key] = 'on';
-					}
-			 }
-
 			// set standard for multi-select
 			if( ( isset( $std ) && is_array( $std ) ) && 
 				( isset( $type) && $type == 'mselect' ) &&
 				! isset( $this->options[$id] ) ) {
 	
 					$this->options[$id] = $std;
-//				 	foreach( $std as $key ) {
-//						if( ! isset( $this->options[$id . '-' . $key] ) )
-//							$this->options[$id . '-' . $key] = 'on';
-//					}
 			 }
 
 			 // set standard for all other
@@ -681,7 +652,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 	
 			// set css class
 			if( ! empty( $class ) )
-				$args->class = ' class="' . $class . '"';
+				$args->class = 'class="' . $class . '"';
 	
 			// options_name is needed for ceckboxes, radio & select
 			$args->options_name = self::$config->basic->options_name;
@@ -715,28 +686,12 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			$slug = self::$config->basic->page_slug;
 
 			foreach( self::$config->scripts as $tag => $values ){
-				// no tag was set
+				// no tag was set (tag == integer)
 				if( ! is_string( $tag ) )
 					$tag = $slug.'_'.$tag;
-					
-				// the simplest way, $values is just a string. make $values an array
-//				if( ! is_array( $values ) ){
-//					$values = array( 'src' => $values );
-//
-//				}
-//				
-//				$defaults = array(	'src' 			=> false,
-//									'dependencies' 	=> array(),
-//									'version'		=> false,
-//									'in_footer'		=> true
-//							);
-//				$values = wp_parse_args( $values, $defaults );
-//				
-//				if( ! is_array( $values['dependencies'] ) )
-//					$values['dependencies'] = (array) $values['dependencies'];
 				
 				// maybe no source was set. but don't care about if $src exists or is readable!!!
-				if( ! $values['src'] )
+				if( empty( $values['src'] ) )
 					continue;
 					
 				wp_enqueue_script( $tag, $values['src'], $values['dependencies'], $values['version'], $values['in_footer'] );
@@ -838,8 +793,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			$defaults->menu_title	 	= $name;
 			$defaults->description	 	= $desc;
 			
-			return $defaults;
-				
+			return $defaults;				
 		}
 		
 
