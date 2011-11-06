@@ -387,7 +387,7 @@ self::$optionspage = $optionspage;
  			}
  			
  			$input = call_user_func_array( array( self::$optionspage, 'check_checkboxes' ), array( $fields, $input ) );
-die(var_dump($input));
+//die(var_dump($input));
 			return $input;
 		}
 		

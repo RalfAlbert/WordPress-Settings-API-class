@@ -663,6 +663,18 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 					}
 			 }
 
+			// set standard for multi-select
+			if( ( isset( $std ) && is_array( $std ) ) && 
+				( isset( $type) && $type == 'mselect' ) &&
+				! isset( $this->options[$id] ) ) {
+	
+					$this->options[$id] = $std;
+//				 	foreach( $std as $key ) {
+//						if( ! isset( $this->options[$id . '-' . $key] ) )
+//							$this->options[$id . '-' . $key] = 'on';
+//					}
+			 }
+
 			 // set standard for all other
 			if( ! isset( $this->options[$id] ) && isset( $std ) )
 				$this->options[$id] = $std;
