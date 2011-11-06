@@ -73,47 +73,24 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			
 		/**
 		 *
-		 * All settings
-		 * @var object
+		 * Optionspage configuration
+		 * @var object $config
 		 */
 		protected static $config = null;
 		
 		/**
-		 *
-		 * Single settings
-		 * @var string mixed
+		 * 
+		 * Defaults for option-fields, retrieve by output-class
+		 * @var object $fields_defaults
 		 */
-		protected $options_group, $options_name, $validate_callback;
-		protected $menu_position, $page_slug, $page_title, $menu_title;
-		protected $capability, $description, $icon;
-	
-		/**
-		 *
-		 * Sections
-		 * @var array
-		 */
-		protected $sections = array();
-	
-		/**
-		 *
-		 * Descriptions for each section (optional setting)
-		 * @var array
-		 */
-		protected $section_descs = array();
-	
-		/**
-		 *
-		 * Field data for each field in different sections
-		 * @var array
-		 */
-		protected $settings_fields = array();
-				
+		protected $fields_defaults = null;
+						
 		/**
 		 * 
 		 * Errors
 		 * @var string
 		 */
-		private $errors = '';
+		private $errors = array();
 			
 		/**
 		 *
@@ -126,15 +103,14 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 */
 		public function __construct( $outputclass = '' ) {
 			if( '' != $outputclass )
-				$this->set_output( $outputclass );
-			
+				$this->set_output( $outputclass );			
 			
 			self::$config			= new stdClass();
 			self::$config->basic	= new stdClass();
 			self::$config->scripts	= new stdClass();
 			self::$config->styles	= new stdClass();
 			self::$config->sections	= new stdClass();
-			self::$config->fields	= new stdClass();
+			//self::$config->fields	= new stdClass();
 			
 			
 			// check if $settings was set. if not, just create an object of this class
@@ -146,7 +122,9 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		}
 
 		public function create_optionspage(){
-			die( var_dump( self::$config ) );
+			$this->init();
+//			$this->show_errors();
+//			die( var_dump( self::$config->sections ) );
 		}
 		
 /* -------------------------------------------------------------------------- */
@@ -204,9 +182,29 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				if ( ! in_array( $config->menu_position, $whitelist_where ) )
 					$config->menu_position = 'options';
 				
-				
+				// validate capability
+				//TODO: validate capability 
+				 
 				// merge internal config with base_config
 				self::$config->basic = $this->_parse_args( self::$config->basic, $config );			
+					
+				// check for empty values. this values can't be empty
+				$not_empty = array( 'page_slug', 'options_group', 'options_name', 'menu_title', 'page_title' );
+				$val_error = array();
+				
+				foreach( $not_empty as $key ){
+					if( ! isset( self::$config->basic->$key ) || null === self::$config->basic->$key )
+						array_push( $val_error, $key );
+				}
+				if( ! empty( $val_error ) && is_admin() ){
+					$msg = __('<h4>Error in class <b>Easy Settings-API</b></h4><br />The following value(s) have to be set in configuration array:');
+					$msg .= '<ol>';
+					foreach( $val_error as $e )
+						$msg .= "<li>{$e}</li>";
+					$msg .= '</ol>';
+					
+					$this->add_error( $msg );
+				}					
 		}
 		
 		/**
@@ -234,6 +232,10 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				}
 	
 				$script = $this->_parse_args( $script, $defaults, true );
+				
+				// make sure dependencies is an array
+				if( ! is_array( $script->dependencies ) )
+					$script->dependencies = (array) $script->dependencies;
 			}	
 	
 			self::$config->scripts = $this->_parse_args( self::$config->scripts, $scripts );
@@ -266,10 +268,9 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				return false;
 				
 			$defaults = new stdClass();
-			$defaults->title		= '';
-			$defaults->description	= '';
+			$defaults->title		= 'Default';
+			$defaults->description	= 'Default section';
 			$defaults->fields		= array();
-			$defaults->section		= 'default';
 			
 			foreach( $sections as &$section ){
 				$section = $this->_parse_args( $section, $defaults, true );
@@ -291,48 +292,47 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			if( '' != $section )
 				$defaults->section = $section;
 				
+			// create a default section to catch all misguided fields
+			if( ! isset( self::$config->sections->default ) ){
+				$def = new stdClass();
+				$def->default->title = 'Nirvana';
+				$def->default->description = 'Default section to catch misguided fields';
+				$this->add_section( $def );
+			}
+								
 			// get the possible settings for a setting-field from the output-class
-			if( ! isset( $this->output ) )
-				$this->set_output();
+			if( ! isset( $this->fields_defaults ) )
+				$this->get_fields_defaults();
 				
-			$cv = get_class_vars( get_class( $this->output ) );
-			if( isset( $cv['fields_defaults'] ) )
-				$defaults = $this->_parse_args( $defaults, $cv['fields_defaults'] );
+			if( ! empty( $this->fields_defaults ) )
+				$defaults = $this->_parse_args( $defaults, $this->fields_defaults );
+			else
+				$this->add_error( 'Can\t get field defaults from output class.');
 			
+			// copy fields to sections
 			foreach( $fields as &$field ){
 				$field = $this->_parse_args( $field, $defaults );
+				
+				$target_section = $field->section;
+				if( isset( self::$config->sections->$target_section ) ){
+					array_push( self::$config->sections->$target_section->fields, $field );
+					
+					// log an error if no suitable section found for this field
+					if( 'default' == $target_section )
+						$this->add_error( sprintf( __('No section found for field <em>%s</em>. Field assigned to default section'), $field->id ) );
+				}
+				else {
+					// log errors for totally fuzzy fields
+					$this->add_error( sprintf( __('No section found for field <em>%s</em>'), $field->id ) );
+				}
 			}
 			
-			self::$config->fields = $this->_parse_args( self::$config->fields, $fields );
+			// remove default section if no field was misguided
+			if( empty( self::$config->sections->default->fields ) )
+				unset( self::$config->sections->default );
 		}
 		
 			
-		protected function get_file_headers( $file ){
-			if( ! file_exists( $file ) )
-				return false;				
-			
-			// must be included for function get_plugin_data
-			if( ! function_exists( 'get_plugin_data' ) )
-				require_once ABSPATH.'wp-admin/includes/plugin.php';
-				
-			$data = get_plugin_data( $file );
-				
-			$name = isset( $data['Name'] ) ? $data['Name'] : 'Default Plugin';
-			$desc = isset( $data['Description'] ) ? $data['Description'] : 'Default description';
-				
-			$slug = strtolower( esc_attr( str_replace( ' ', '_', $name ) ) );
-			
-			$defaults = new stdClass();
-			$defaults->page_slug 		= $slug;
-			$defaults->options_group	= $slug . '_optionsgroup';
-			$defaults->options_name		= $slug . '_options';
-			$defaults->page_title	 	= $name;
-			$defaults->menu_title	 	= $name;
-			$defaults->description	 	= $desc;
-			
-			return $defaults;
-				
-		}
 /* -------------------------------------------------------------------------- */
 		
 		/**
@@ -344,7 +344,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * @access protected
 		 */
 		protected function add_error( $msg = '' ){
-			$this->errors .= '<p>' . $msg . '</p>';	
+			$this->errors[] = $msg;	
 		}
 		
 		/**
@@ -358,7 +358,10 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 */
 		public function show_errors(){
 			if( '' != $this->errors ){
-				echo "<div class='error'>{$this->errors}</div>";
+				echo '<div class="error"><ol>';
+				foreach( $this->errors as $error )
+					echo "<li>{$error}</li>";
+				echo '</ol></div>';
 				
 				// remove actions to avoid displaying a broken options-page
 				remove_action( 'admin_menu', array( &$this, 'add_page' ) );
@@ -383,53 +386,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			add_action( 'admin_menu', array( &$this, 'add_page' ) );
 			add_action( 'admin_init', array( &$this, 'register_settings' ) );			
 		}
-	
-		/**
-		 * 
-		 * Create the array with default values
-		 * Try to read the plugin-header and copy all available data from the
-		 * plugin-header to the defaults array.
-		 * @param none
-		 * @return array $defaults
-		 * @uses get_plugin_data()
-		 * @since 0.6.1
-		 * @access protected
-		 */
-		protected function get_defaults(){
- 			$defaults = array(
-				'menu_position'		 => 'options',
-				'page_slug'			 => '',
-				'options_group'		 => '',
-				'options_name'		 => '',
-				'validate_callback'	 => '',
-				'page_title'		 => '',
-				'menu_title'		 => '',
-				'capability'		 => 'manage_options',
-				'description'		 => '',
- 				'icon'				 => 'icon-options-general',
-	
-				'sections'			 => array(
-					'default' => __('Default Section')
-				),
-	
-				'section_desc'		 => array(
-					'default' => __('Description for the default section.')
-				),
-	
-				'settings_fields'	 => array(
-					array(
-						'id'		 => 'default_heading',
-						'title'		 => __('Default heading'),
-						'desc'		 => __('This heading is displayed when the default values are used.'),
-						'type'		 => 'heading',
-						'section'	 => 'default'
-					),
-				)
-			);
 						
-			return $defaults;			
-		}
-				
 		/**
 		 * 
 		 * Return options from database or $this->options if already set
@@ -465,7 +422,6 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				
 			return $this->output;
 		}
-		
 			
 		/**
 		 * 
@@ -483,7 +439,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			if( null === $this->output ){
 				// setup the output-class
 				// if no output-class is defined, use the standard output-class
-				if( ! isset( $this->output_class ) || empty( $this->output_class ) )
+				if( empty( $this->output_class ) )
 					$this->output_class = self::STANDARD_OUTPUT_CLASS;
 					
 				// require file with output-class if class does not exists
@@ -498,71 +454,38 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			else
 				return $this->output;		
 		}
-		
-		
+			
 		/**
 		 *
-		 * Getter for settings
+		 * Getter for config
 		 * @param none
-		 * @return array
-		 * @since 0.1
+		 * @return object $config
+		 * @since 0.7.0
 		 * @access public
 		 */
-		public function get_settings() {
-			return self::$_settings;
+		public function get_config() {
+			return self::$config;
 		}
 		
-	
 		/**
 		 * 
-		 * Setter for $settings
-		 * Set $_settings if $settings is given and $defaults not
-		 * Sanitize $settings
-		 * Merge $settings and $defaults if both are given
-		 * 
-		 * @param array $settings
-		 * @return array $_settings
-		 * @since 0.3
+		 * Get fields defaults from output-class
+		 * @param none
+		 * @return object $fields_defaults
+		 * @since 0.7.0
 		 * @access public
 		 */
-		public function set_settings( array $settings = null, $defaults = array() ){
-			// no settings, no action
-			if( null === $settings )
-				return false;
+		public function get_fields_defaults(){
+			if( ! isset( $this->output ) )
+				$this->get_output();
 				
-			// Sanitize the users data!
-			// There is only one thing that makes you sleep well:
-			// Better than security is more security
-			array_walk_recursive( $settings, array( &$this, 'sanitize_settings' ) );
+			$cv = get_class_vars( get_class( $this->output ) );
+			if( isset( $cv['fields_defaults'] ) )
+				$this->fields_defaults = $cv['field_defaults'];
 				
-			// if defaults are set, merging them with settings
-			if( ! empty( $defaults ) )
-				self::$_settings = wp_parse_args( $settings, $defaults );
-			else				
-				self::$_settings = $settings;
-
-			// check for empty values
-			$not_empty = array( 'page_slug', 'options_group', 'options_name', 'menu_title', 'page_title' );
-			$val_error = array();
-			
-			foreach( $not_empty as $key ){
-				if( empty( self::$_settings[$key] ) )
-					array_push( $val_error, $key );
-			}
-			if( ! empty( $val_error ) && is_admin() ){
-				$msg = '<h4>Error in class <b>Easy Settings-API</b></h4><br />The following value(s) have to be set in configuration array:';
-				$msg .= '<ol>';
-				foreach( $val_error as $e )
-					$msg .= "<li>{$e}</li>";
-				$msg .= '</ol>';
-				
-				$this->add_error( $msg );
-			}
-			
-			return self::$_settings;
-			
+			return $this->fields_defaults;
 		}
-		
+				
 		
 		/**
 		 *
@@ -574,17 +497,24 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * @access public
 		 */
 		public function add_page() {
-			$where = 'add_' . $this->menu_position . '_page';
-			self::$_settings['admin_page'] = $where( $this->page_title, $this->menu_title, $this->capability, $this->page_slug, array( &$this, 'display_page' ) );
+			$c = self::$config->basic;
+			
+			$where = 'add_' . $c->menu_position . '_page';
+			$c->admin_page = $where( $c->page_title, $c->menu_title, $c->capability, $c->page_slug, array( &$this, 'display_page' ) );
+			
 			
 			// register javascript(s) if set
-			if( ! empty( self::$_settings['js_scripts'] ) && is_array( self::$_settings['js_scripts'] ) ){
-				self::register_js( self::$_settings['js_scripts'] );
+			if( ! empty( self::$config->scripts ) ){
+				add_action( 'load-' . $c->admin_page, array( __CLASS__, 'enqueue_scripts' ) );
+				
 			}
 			
 			// hook up custom stylesheets
-			if( ! empty( self::$_settings['styles'] ) )
-				add_action( 'admin_print_styles-' . self::$_settings['admin_page'], array( &$this, 'enqueue_styles' ) );
+			if( ! empty( self::$config->styles ) )
+				add_action( 'admin_print_styles-' . $c->admin_page, array( &$this, 'enqueue_styles' ) );
+				
+			// copy back modified config
+			self::$config->basic = $c;
 		}
 		
 	
@@ -600,43 +530,50 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * @access public
 		 */
 		public function register_settings() {
-			register_setting( $this->options_group, $this->options_name, $this->validate_callback );
-	
-			foreach( $this->sections as $slug => $title ) {
-				add_settings_section( $slug, $title, array( &$this, 'display_section' ), $this->page_slug );
-			}
-	
-			foreach ( $this->settings_fields as $field ) {
-				$this->create_setting( $field );
-			}
+			$c = self::$config->basic;
 			
-			unset( $slug, $title, $field );
+			register_setting( $c->options_group, $c->options_name, $c->validate_callback );
+	
+			foreach( self::$config->sections as $section => $data ) {
+				add_settings_section( $section, $data->title, array( &$this, 'display_section' ), $c->page_slug );
+				
+				foreach ( $data->fields as $field ) {
+					$this->create_setting( $field );
+				}
+				
+			}
+	
 		}
 		
 	
 		/**
 		 *
 		 * Create a settings field with given arguments
-		 * @param array $args
+		 * @param object $args
 		 * @return none
-		 * @uses wp_parse_args()
 		 * @uses add_settings_field()
 		 * @since 0.1
 		 * @access public
 		 */
-		public function create_setting( array $args = array() ) {
-			if( null === $this->output )
-				$this->output = $this->get_output();
-					
-			wp_parse_args( $args, $this->output->settings_fields_defaults );
+		public function create_setting( $args = null ) {
+			if( null === $args )
+				return false;
 			
+			$c = self::$config->basic;
+			
+			if( ! isset( $this->fields_defaults ) )
+				$this->get_fields_defaults();
+				
+			if( ! empty( $this->fields_defaults ) )	
+				$args = $this->_parse_args( $args, $this->fields_defaults );
+			else
+				$this->add_error( 'Can\t get field defaults from output class.');
+						
 			// copy the 'id' to 'label_for'
 			$args['label_for'] = $args['id'];
 	
-			add_settings_field( $args['id'], $args['title'], array( &$this, 'display_settings_field' ), $this->page_slug, $args['section'], $args );
+			add_settings_field( $args['id'], $args['title'], array( &$this, 'display_settings_field' ), $c->page_slug, $args['section'], $args );
 			
-			//cleanup
-			unset( $args, $defaults );
 		}
 		
 		
@@ -651,15 +588,17 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * @access public
 		 */
 		public function display_page() {
-			if( null === $this->output )
-				$this->output = $this->get_output();
+			if( ! isset( $this->output ) )
+				$this->get_output();
 	
+			$c = self::$config->basic;
+			
 			$args = new stdClass();
-			$args->options_group = $this->options_group;
-			$args->page_slug = $this->page_slug;
-			$args->description = $this->description;
-			$args->page_title = $this->page_title;
-			$args->icon = $this->icon;
+			$args->options_group = $c->options_group;
+			$args->page_slug = $c->page_slug;
+			$args->description = $c->description;
+			$args->page_title = $c->page_title;
+			$args->icon = $c->icon;
 			
 			$this->output->display_page( $args );
 		}
@@ -673,9 +612,9 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * @since 0.1
 		 * @access public
 		 */
-		public function display_section( array $section ) {
-			if ( key_exists( $section['id'], $this->section_descs ) )
-				echo $this->section_descs[$section['id']];
+		public function display_section( $section ) {
+			if( isset( self::$config->sections->$section->description ) )
+				echo self::$config->sections->$section->description;
 		}
 		
 		
@@ -689,23 +628,25 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * @since 0.1
 		 * @access public
 		 */
-		public function display_settings_field( array $args = array() ) {
-			// get outpot-object
-			if( null === $this->output )
-				$this->output = $this->get_output();
-	
+		public function display_settings_field( $args = null ) {
+			if( null === $args )
+				return false;
+				
 			// get options from db
-			$this->options = $this->get_options( $this->options_name );	
+			if( ! isset( $this->options ) )
+				$this->get_options( self::$config->options_name );	
 			
 			// extracting vars for display in $output
-			$whitelist_vars = $this->output->settings_fields_defaults; //array( 'id', 'type', 'std', 'class', 'desc' );
-			$args = wp_parse_args( $args, $whitelist_vars );
+			if( ! isset( $this->fields_defaults ) )
+				$this->get_fields_defaults();
+				
+			$args = $this->_parse_args( $args, $this->fields_defaults );
 	
 			$copy_vars = array( 'id', 'type', 'std', 'class' );
 			
 			foreach( $copy_vars as $cv ){
-				if( isset( $args[$cv] ) )
-					$$cv = $args[$cv];
+				if( isset( $args->$cv ) )
+					$$cv = $args->$cv;
 			}
 			
 			// set standard for multi checkbox
@@ -730,54 +671,24 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			// copy options to output-object
 			$this->output->set_options( $this->options );
 	
-			// convert args to object (output-object need args as object)
-			// and add some vars
-			$args = (object) $args;
-			$args->options_name = $this->options_name;
+			// and add some vars to $args
+			$args->options_name = self::$config->options_name;
 	
 			// display setting field
 			call_user_func( array( $this->output, $type ), $args );
 			
 			// reset vars
-			foreach( $args as $key => $value ){
-				if( key_exists( $key, $whitelist_vars ) )
-					unset( $this->output->$key );
-			}
+//			foreach( $args as $key => $value ){
+//				if( key_exists( $key, $whitelist_vars ) )
+//					unset( $this->output->$key );
+//			}
 			
 		}
 		
 
-		/**
-		 * 
-		 * Register JavaScript(s) for the optionspage
-		 * If this method is called before the optionspage was added, than the javascripts only will be registered
-		 * If the JavaScripts are already registered, than they will be enqueued
-		 * @param array $scripts Array with (string) tag, (string) source, (array) dependencies, (string) version, (bool) in_footer
-		 * @return bool true|false|number of registered scripts
-		 * @since 0.6
-		 * @access public static
-		 */
-		public static function register_js( array $scripts = null ){
-			// no $scripts, no action
-			if( empty( $scripts ) )
-				return false;
-
-			// just set js_scripts, optionspage wasn't added yet. e.g. for external calls
-			if( empty( self::$_settings['admin_page'] ) ){
-				self::$_settings['js_scripts'] = $scripts;	
-				return sizeof( self::$_settings['js_scripts'] );
-			}
-			
-			//optionspage was already added. set js_scripts if it isn't set yet
-			if( empty( self::$_settings['js_scripts'] ) )
-				self::$_settings['js_scripts'] = $scripts;
-			
-			// optionspage was added, js_src was set, add actionhook
-			add_action( 'load-' . self::$_settings['admin_page'], array( __CLASS__, 'enqueue_scripts' ) );
-
-			return true;
-		}
-
+/* -------------------------------------------------------------------------- */
+/* --- scripts & styles --------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 		/**
 		 * 
 		 * Enqueue Scripts
@@ -789,32 +700,32 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 */
 		public static function enqueue_scripts(){
 			// no scripts, no action
-			if( empty( self::$_settings['js_scripts'] ) || empty( self::$_settings['page_slug'] ))
+			if( empty( self::$config->scripts ) || empty( self::$config->basic->page_slug ))
 				return false;
 				
 			// use the page_slug as part of the tag if no tag was set
-			$slug = self::$_settings['page_slug'];
+			$slug = self::$config->basic->page_slug;
 
-			foreach( self::$_settings['js_scripts'] as $tag => $values ){
+			foreach( self::$config->scripts as $tag => $values ){
 				// no tag was set
 				if( ! is_string( $tag ) )
 					$tag = $slug.'_'.$tag;
 					
 				// the simplest way, $values is just a string. make $values an array
-				if( ! is_array( $values ) ){
-					$values = array( 'src' => $values );
-
-				}
-				
-				$defaults = array(	'src' 			=> false,
-									'dependencies' 	=> array(),
-									'version'		=> false,
-									'in_footer'		=> true
-							);
-				$values = wp_parse_args( $values, $defaults );
-				
-				if( ! is_array( $values['dependencies'] ) )
-					$values['dependencies'] = (array) $values['dependencies'];
+//				if( ! is_array( $values ) ){
+//					$values = array( 'src' => $values );
+//
+//				}
+//				
+//				$defaults = array(	'src' 			=> false,
+//									'dependencies' 	=> array(),
+//									'version'		=> false,
+//									'in_footer'		=> true
+//							);
+//				$values = wp_parse_args( $values, $defaults );
+//				
+//				if( ! is_array( $values['dependencies'] ) )
+//					$values['dependencies'] = (array) $values['dependencies'];
 				
 				// maybe no source was set. but don't care about if $src exists or is readable!!!
 				if( ! $values['src'] )
@@ -835,28 +746,18 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 * @access public
 		 */
 		public function enqueue_styles(){
-			if( ! empty( self::$_settings['styles'] ) ){
-				$styles = self::$_settings['styles'];
-				$slug 	= self::$_settings['page_slug'];
-				$count = 0;
-				
-				// first check if $styles is an array. if not, use the page_slug as tag
-				if( ! is_array( $styles ) )
-					$styles = array( $slug => $styles );
-					
-				foreach( $styles as $tag => $source ){
-					// if no tag is set, use page_slug+index as tag
-					if( ! is_string( $tag ) )
-						$tag = $slug.'_'.$tag;
-
-					wp_enqueue_style( $tag, $source, false, false, 'all' );
+			if( ! empty( self::$config->styles ) ){
+				$styles = self::$config->styles;
+									
+				foreach( $styles as $tag => $data ){
+					wp_enqueue_style( $tag, $data->src, $data->deps, false, 'all' );
 				}
 				
 			}
 		}
 		
 /* -------------------------------------------------------------------------- */
-/* internal functions ------------------------------------------------------ */
+/* --- internal functions --------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 		/**
 		 * 
@@ -892,24 +793,45 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			return $input;
 		}
 		
-	/* --------------- sanitizing --------------- */ 
 		/**
-		 *
-		 * Sanitizing the users data
-		 * Strings will be sanitize with esc_attr, all other values will be cast to integer (we only need strings and integer)
-		 * @param mixed $data
-		 * @return none $data will be modified by reference
-		 * @since 0.2.1
-		 * @access private
+		 * 
+		 * Reading plugin-headers and copy to object defaults
+		 * @param string $file Path to plugin (with headers)
+		 * @return object $defaults If fileheaders was found, false if file does not exists (or is not readable)
+		 * @since 0.7.0
+		 * @uses get_plugin_data()
 		 */
-		private function sanitize_settings( &$data ) {
-			if ( is_string( $data ) )
-				esc_attr( $data );
-			else
-				$data = intval( $data );
+		protected function get_file_headers( $file ){
+			if( ! file_exists( $file ) || ! is_readable( $file ) )
+				return false;				
+			
+			// must be included for function get_plugin_data
+			if( ! function_exists( 'get_plugin_data' ) )
+				require_once ABSPATH.'wp-admin/includes/plugin.php';
+				
+			$data = get_plugin_data( $file );
+				
+			$name = isset( $data['Name'] ) ? $data['Name'] : 'Default Plugin';
+			$desc = isset( $data['Description'] ) ? $data['Description'] : 'Default description';
+				
+			$slug = strtolower( esc_attr( str_replace( ' ', '_', $name ) ) );
+			
+			$defaults = new stdClass();
+			$defaults->page_slug 		= $slug;
+			$defaults->options_group	= $slug . '_optionsgroup';
+			$defaults->options_name		= $slug . '_options';
+			$defaults->page_title	 	= $name;
+			$defaults->menu_title	 	= $name;
+			$defaults->description	 	= $desc;
+			
+			return $defaults;
+				
 		}
+		
 
-	/* --------------- utilities --------------- */
+/* -------------------------------------------------------------------------- */
+/* --- utilities ------------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
 		/**
 		 * 
 		 * Check values of checkboxes after sending data via form

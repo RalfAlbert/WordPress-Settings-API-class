@@ -142,7 +142,7 @@ $optionspage->basic_config( $base_config, __FILE__ );
 			$scripts->sac_demo2_js->in_footer		= true;
 
 
-$optionspage->add_script( $scripts );
+//$optionspage->add_script( $scripts );
 
 
 			/*
@@ -161,7 +161,6 @@ $optionspage->add_script( $scripts );
 			$styles->third_demo_style = plugins_url( 'css/demostyle.css', __FILE__ );
 
 $optionspage->add_style( $styles );
-			
 
 			/*
 			 * Sections
@@ -194,7 +193,7 @@ $optionspage->add_section( $sections );
 			/* fields for section 'general' */ 
 			
 			// heading field
-			$field->heading = new stdClass();
+			$field = new stdClass();
 			$field->heading->id			= 'demo_heading';
 			$field->heading->type		= 'heading';
 			$field->heading->title		= 'Heading';
@@ -203,11 +202,11 @@ $optionspage->add_section( $sections );
 $optionspage->add_field( $field );
 			
 			// custom field
-			$field->custom = new stdClass();
+			$field = new stdClass();
 			$field->custom->id			= 'demo_custom';
 			$field->custom->type		= 'custom';
 			$field->custom->title		= 'Custom';
-			$field->custom->sedction	= 'general';
+			$field->custom->section		= 'general';
 			$field->custom->description	= 'Custum is using a callbackfunction to display the input';
 			$field->custom->callback	= array( __CLASS__, 'custom_callback' );
 			// each single array-element is passed as single argument to the
@@ -220,7 +219,7 @@ $optionspage->add_field( $field );
 			
 
 			// checkbox field
-			$field->checkbox = new stdClass();
+			$field = new stdClass();
 			$field->checkbox->id			= 'demo_checkbox';
 			$field->checkbox->type			= 'checkbox';
 			$field->checkbox->title			= __('Checkbox');
@@ -235,17 +234,19 @@ $optionspage->add_field( $field );
 			$field = new stdClass();
 
 			// input field
-			$field->input->id		 	= 'demo_textinput';
-			$field->input->title		= __('Text input');
-			$field->input->description	= __('The description of the text input');
-			$field->input->text_after 	= __('Text after the input-field');
-			$field->input->std		 	= 'demo text';
-			$field->input->size			= 30;
-			$field->input->type			= 'text';
+			$field->input->id		 		= 'demo_textinput';
+			$field->input->title			= __('Text input');
+			$field->input->section			= 'general';
+			$field->input->description		= __('The description of the text input');
+			$field->input->text_after 		= __('Text after the input-field');
+			$field->input->std		 		= 'demo text';
+			$field->input->size				= 30;
+			$field->input->type				= 'text';
 			
 			// password field
 			$field->password->id			= 'demo_password';
 			$field->password->title			= __('Password');
+			$field->password->section		= 'general';
 			$field->password->description 	= __('You can even preselect a standard password');
 			$field->password->text_after	= __('Text after the password-field');
 			$field->password->std			= 'password';
