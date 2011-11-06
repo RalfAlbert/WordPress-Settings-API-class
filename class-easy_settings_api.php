@@ -43,6 +43,9 @@
 if( ! class_exists( 'Easy_Settings_API' ) ){
 	class Easy_Settings_API
 	{
+/* -------------------------------------------------------------------------- */
+/* --- classvars -------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 		/**
 		 * 
 		 * The HTML output object
@@ -92,6 +95,9 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 		 */
 		private $errors = array();
 			
+/* -------------------------------------------------------------------------- */
+/* class configuration ------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
 		/**
 		 *
 		 * Constructor
@@ -112,11 +118,13 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			self::$config->sections	= new stdClass();			
 	
 		}
-
 		
-/* -------------------------------------------------------------------------- */
-/* class configuration ------------------------------------------------------ */
-/* -------------------------------------------------------------------------- */
+		/**
+		 * 
+		 * Enter description here ...
+		 * @param unknown_type $config
+		 * @param unknown_type $parent
+		 */
 		public function basic_config( $config = null, $parent = '' ){
 				// maybe only __FILE__ was set
 				if( '' == $parent && null != $config && 
@@ -228,6 +236,11 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			self::$config->scripts = self::parse_args( self::$config->scripts, $scripts );
 		}
 		
+		/**
+		 * 
+		 * Enter description here ...
+		 * @param unknown_type $styles
+		 */
 		public function add_style( $styles = null ){
 			if( null === $styles )
 				return false;
@@ -250,6 +263,11 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			self::$config->styles = self::parse_args( self::$config->styles, $styles );
 		}
 		
+		/**
+		 * 
+		 * Enter description here ...
+		 * @param unknown_type $sections
+		 */
 		public function add_section( $sections = null ){
 			if( null === $sections )
 				return false;
@@ -265,7 +283,13 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 						
 			self::$config->sections = self::parse_args( self::$config->sections, $sections );
 		}
-		
+
+		/**
+		 * 
+		 * Enter description here ...
+		 * @param unknown_type $fields
+		 * @param unknown_type $section
+		 */
 		public function add_field( $fields = null, $section = '' ){
 			if( null === $fields )
 				return false;
@@ -319,9 +343,27 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 				unset( self::$config->sections->default );
 		}
 		
+		/**
+		 *
+		 * Adding the page to the menu and register the settings. Displays errors if any are encountered
+		 * @param none
+		 * @return none
+		 * @uses add_action()
+		 * @since 0.1
+		 * @access public
+		 */
+		public function create_optionspage(){
+			// show errors
+			add_action( 'admin_notices', array( &$this, 'show_errors' ) );
 			
-/* -------------------------------------------------------------------------- */
+			// add page to admin-menu and register settings
+			add_action( 'admin_menu', array( &$this, 'add_page' ) );
+			add_action( 'admin_init', array( &$this, 'register_settings' ) );			
+		}
 		
+/* -------------------------------------------------------------------------- */
+/* --- errorhandling -------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 		/**
 		 * 
 		 * Adding an error message to the internal error-handling
@@ -356,24 +398,9 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			}
 		}
 				
-		/**
-		 *
-		 * Adding the page to the menu and register the settings. Displays errors if any are encountered
-		 * @param none
-		 * @return none
-		 * @uses add_action()
-		 * @since 0.1
-		 * @access public
-		 */
-		public function create_optionspage(){
-			// show errors
-			add_action( 'admin_notices', array( &$this, 'show_errors' ) );
-			
-			// add page to admin-menu and register settings
-			add_action( 'admin_menu', array( &$this, 'add_page' ) );
-			add_action( 'admin_init', array( &$this, 'register_settings' ) );			
-		}
-						
+/* -------------------------------------------------------------------------- */
+/* --- getter & setter ------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
 		/**
 		 * 
 		 * Return options from database or $this->options if already set
@@ -469,6 +496,9 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			return $this->fields_defaults;
 		}
 	
+/* -------------------------------------------------------------------------- */
+/* --- buisnesslogic -------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 		/**
 		 *
 		 * Add the page to the admin menu. Store page-hook in $_settings.
@@ -497,7 +527,6 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			self::$config->basic = $c;
 		}
 		
-	
 		/**
 		 *
 		 * Register the settings via WP Settings-API
@@ -579,8 +608,7 @@ if( ! class_exists( 'Easy_Settings_API' ) ){
 			
 			$this->output->display_page( $args );
 		}
-		
-	
+			
 		/**
 		 *
 		 * Display the description for a section if defined
